@@ -1,12 +1,11 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
 // Copyright (c) 2009-2019 The Bitcoin Core developers
 // Copyright (c) 2017 The Zcash developers
-// Copyright (c) Flo Developers 2013-2021
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#ifndef BITCOIN_KEY_H
-#define BITCOIN_KEY_H
+#ifndef FLOCOIN_KEY_H
+#define FLOCOIN_KEY_H
 
 #include <pubkey.h>
 #include <serialize.h>
@@ -129,6 +128,18 @@ public:
      */
     bool SignCompact(const uint256& hash, std::vector<unsigned char>& vchSig) const;
 
+    /**
+     * Create a BIP-340 Schnorr signature, for the xonly-pubkey corresponding to *this,
+     * optionally tweaked by *merkle_root. Additional nonce entropy can be provided through
+     * aux.
+     *
+     * When merkle_root is not nullptr, this results in a signature with a modified key as
+     * specified in BIP341:
+     * - If merkle_root->IsNull(): key + H_TapTweak(pubkey)*G
+     * - Otherwise:                key + H_TapTweak(pubkey || *merkle_root)
+     */
+    bool SignSchnorr(const uint256& hash, Span<unsigned char> sig, const uint256* merkle_root = nullptr, const uint256* aux = nullptr) const;
+
     //! Derive BIP32 child key.
     bool Derive(CKey& keyChild, ChainCode &ccChild, unsigned int nChild, const ChainCode& cc) const;
 
@@ -174,4 +185,4 @@ void ECC_Stop();
 /** Check that required EC support is available at runtime. */
 bool ECC_InitSanityCheck();
 
-#endif // BITCOIN_KEY_H
+#endif // FLOCOIN_KEY_H

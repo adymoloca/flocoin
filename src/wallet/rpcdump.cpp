@@ -1,5 +1,4 @@
 // Copyright (c) 2009-2020 The Bitcoin Core developers
-// Copyright (c) Flo Developers 2013-2021
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -232,7 +231,7 @@ RPCHelpMan importaddress()
             "as change, and not show up in many RPCs.\n"
             "Note: Use \"getwalletinfo\" to query the scanning progress.\n",
                 {
-                    {"address", RPCArg::Type::STR, RPCArg::Optional::NO, "The Bitcoin address (or hex-encoded script)"},
+                    {"address", RPCArg::Type::STR, RPCArg::Optional::NO, "The Flocoin address (or hex-encoded script)"},
                     {"label", RPCArg::Type::STR, RPCArg::Default{""}, "An optional label"},
                     {"rescan", RPCArg::Type::BOOL, RPCArg::Default{true}, "Rescan the wallet for transactions"},
                     {"p2sh", RPCArg::Type::BOOL, RPCArg::Default{false}, "Add the P2SH version of the script as well"},
@@ -307,7 +306,7 @@ RPCHelpMan importaddress()
 
             pwallet->ImportScriptPubKeys(strLabel, scripts, false /* have_solving_data */, true /* apply_label */, 1 /* timestamp */);
         } else {
-            throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid Bitcoin address or script");
+            throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid Flocoin address or script");
         }
     }
     if (fRescan)
@@ -669,7 +668,7 @@ RPCHelpMan dumpprivkey()
                 "\nReveals the private key corresponding to 'address'.\n"
                 "Then the importprivkey can be used with this output\n",
                 {
-                    {"address", RPCArg::Type::STR, RPCArg::Optional::NO, "The bitcoin address for the private key"},
+                    {"address", RPCArg::Type::STR, RPCArg::Optional::NO, "The flocoin address for the private key"},
                 },
                 RPCResult{
                     RPCResult::Type::STR, "key", "The private key"
@@ -693,7 +692,7 @@ RPCHelpMan dumpprivkey()
     std::string strAddress = request.params[0].get_str();
     CTxDestination dest = DecodeDestination(strAddress);
     if (!IsValidDestination(dest)) {
-        throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid Bitcoin address");
+        throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid Flocoin address");
     }
     auto keyid = GetKeyForDestination(spk_man, dest);
     if (keyid.IsNull()) {
@@ -750,7 +749,7 @@ RPCHelpMan dumpwallet()
 
     /* Prevent arbitrary files from being overwritten. There have been reports
      * that users have overwritten wallet files this way:
-     * https://github.com/bitcoin/bitcoin/issues/9934
+     * https://github.com/flocoin/flocoin/issues/9934
      * It may also avoid other security issues.
      */
     if (fs::exists(filepath)) {
@@ -784,7 +783,7 @@ RPCHelpMan dumpwallet()
     std::sort(vKeyBirth.begin(), vKeyBirth.end());
 
     // produce output
-    file << strprintf("# Wallet dump created by Bitcoin %s\n", CLIENT_BUILD);
+    file << strprintf("# Wallet dump created by Flocoin %s\n", CLIENT_BUILD);
     file << strprintf("# * Created on %s\n", FormatISO8601DateTime(GetTime()));
     file << strprintf("# * Best block at time of backup was %i (%s),\n", wallet.GetLastBlockHeight(), wallet.GetLastBlockHash().ToString());
     file << strprintf("#   mined on %s\n", FormatISO8601DateTime(block_time));
@@ -934,6 +933,8 @@ static std::string RecurseImportData(const CScript& script, ImportData& import_d
         return "unspendable script";
     case TxoutType::NONSTANDARD:
     case TxoutType::WITNESS_UNKNOWN:
+    case TxoutType::WITNESS_V1_TAPROOT:
+        return "unrecognized script";
     } // no default case, so the compiler can warn about missing cases
     CHECK_NONFATAL(false);
 }
@@ -1435,7 +1436,7 @@ RPCHelpMan importmulti()
                                       "block from time %d, which is after or within %d seconds of key creation, and "
                                       "could contain transactions pertaining to the key. As a result, transactions "
                                       "and coins using this key may not appear in the wallet. This error could be "
-                                      "caused by pruning or data corruption (see bitcoind log for details) and could "
+                                      "caused by pruning or data corruption (see flocoind log for details) and could "
                                       "be dealt with by downloading and rescanning the relevant blocks (see -reindex "
                                       "and -rescan options).",
                                 GetImportTimestamp(request, now), scannedTime - TIMESTAMP_WINDOW - 1, TIMESTAMP_WINDOW)));
@@ -1547,7 +1548,14 @@ static UniValue ProcessDescriptorImport(CWallet& wallet, const UniValue& data, c
         // Check if this is a Taproot descriptor
         CTxDestination dest;
         ExtractDestination(scripts[0], dest);
-        
+        if (std::holds_alternative<WitnessV1Taproot>(dest)) {
+            // Check if Taproot is active
+            if (!wallet.chain().isTaprootActive()) {
+                // Taproot is not active, raise an error
+                throw JSONRPCError(RPC_WALLET_ERROR, "Cannot import tr() descriptor when Taproot is not active");
+            }
+        }
+
         // If private keys are enabled, check some things.
         if (!wallet.IsWalletFlagSet(WALLET_FLAG_DISABLE_PRIVATE_KEYS)) {
            if (keys.keys.empty()) {
@@ -1733,7 +1741,7 @@ RPCHelpMan importdescriptors()
                                       "block from time %d, which is after or within %d seconds of key creation, and "
                                       "could contain transactions pertaining to the desc. As a result, transactions "
                                       "and coins using this desc may not appear in the wallet. This error could be "
-                                      "caused by pruning or data corruption (see bitcoind log for details) and could "
+                                      "caused by pruning or data corruption (see flocoind log for details) and could "
                                       "be dealt with by downloading and rescanning the relevant blocks (see -reindex "
                                       "and -rescan options).",
                                 GetImportTimestamp(request, now), scanned_time - TIMESTAMP_WINDOW - 1, TIMESTAMP_WINDOW)));

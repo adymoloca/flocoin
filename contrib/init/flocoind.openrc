@@ -1,0 +1,93 @@
+#!/sbin/openrc-run
+
+# backward compatibility for existing gentoo layout 
+#
+if [ -d "/var/lib/flocoin/.flocoin" ]; then
+	FLOCOIND_DEFAULT_DATADIR="/var/lib/flocoin/.flocoin"
+else
+	FLOCOIND_DEFAULT_DATADIR="/var/lib/flocoind"
+fi
+
+FLOCOIND_CONFIGFILE=${FLOCOIND_CONFIGFILE:-/etc/flocoin/flocoin.conf}
+FLOCOIND_PIDDIR=${FLOCOIND_PIDDIR:-/var/run/flocoind}
+FLOCOIND_PIDFILE=${FLOCOIND_PIDFILE:-${FLOCOIND_PIDDIR}/flocoind.pid}
+FLOCOIND_DATADIR=${FLOCOIND_DATADIR:-${FLOCOIND_DEFAULT_DATADIR}}
+FLOCOIND_USER=${FLOCOIND_USER:-${FLOCOIN_USER:-flocoin}}
+FLOCOIND_GROUP=${FLOCOIND_GROUP:-flocoin}
+FLOCOIND_BIN=${FLOCOIND_BIN:-/usr/bin/flocoind}
+FLOCOIND_NICE=${FLOCOIND_NICE:-${NICELEVEL:-0}}
+FLOCOIND_OPTS="${FLOCOIND_OPTS:-${FLOCOIN_OPTS}}"
+
+name="Flocoin Core Daemon"
+description="Flocoin cryptocurrency P2P network daemon"
+
+command="/usr/bin/flocoind"
+command_args="-pid=\"${FLOCOIND_PIDFILE}\" \
+		-conf=\"${FLOCOIND_CONFIGFILE}\" \
+		-datadir=\"${FLOCOIND_DATADIR}\" \
+		-daemon \
+		${FLOCOIND_OPTS}"
+
+required_files="${FLOCOIND_CONFIGFILE}"
+start_stop_daemon_args="-u ${FLOCOIND_USER} \
+			-N ${FLOCOIND_NICE} -w 2000"
+pidfile="${FLOCOIND_PIDFILE}"
+
+# The retry schedule to use when stopping the daemon. Could be either
+# a timeout in seconds or multiple signal/timeout pairs (like
+# "SIGKILL/180 SIGTERM/300")
+retry="${FLOCOIND_SIGTERM_TIMEOUT}"
+
+depend() {
+	need localmount net
+}
+
+# verify
+# 1) that the datadir exists and is writable (or create it)
+# 2) that a directory for the pid exists and is writable
+# 3) ownership and permissions on the config file
+start_pre() {
+	checkpath \
+	-d \
+	--mode 0750 \
+	--owner "${FLOCOIND_USER}:${FLOCOIND_GROUP}" \
+	"${FLOCOIND_DATADIR}"
+
+	checkpath \
+	-d \
+	--mode 0755 \
+	--owner "${FLOCOIND_USER}:${FLOCOIND_GROUP}" \
+	"${FLOCOIND_PIDDIR}"
+
+	checkpath -f \
+	-o "${FLOCOIND_USER}:${FLOCOIND_GROUP}" \
+	-m 0660 \
+	"${FLOCOIND_CONFIGFILE}"
+
+	checkconfig || return 1
+}
+
+checkconfig()
+{
+	if grep -qs '^rpcuser=' "${FLOCOIND_CONFIGFILE}" && \
+		! grep -qs '^rpcpassword=' "${FLOCOIND_CONFIGFILE}" ; then
+		eerror ""
+		eerror "ERROR: You must set a secure rpcpassword to run flocoind."
+		eerror "The setting must appear in ${FLOCOIND_CONFIGFILE}"
+		eerror ""
+		eerror "This password is security critical to securing wallets "
+		eerror "and must not be the same as the rpcuser setting."
+		eerror "You can generate a suitable random password using the following "
+		eerror "command from the shell:"
+		eerror ""
+		eerror "bash -c 'tr -dc a-zA-Z0-9 < /dev/urandom | head -c32 && echo'"
+		eerror ""
+		eerror "It is recommended that you also set alertnotify so you are "
+		eerror "notified of problems:"
+		eerror ""
+		eerror "ie: alertnotify=echo %%s | mail -s \"Flocoin Alert\"" \
+			"admin@foo.com"
+		eerror ""
+		return 1
+	fi
+}

@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 # Copyright (c) 2016-2020 The Bitcoin Core developers
-# Copyright (c) Flo Developers 2013-2021
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 """Test label RPCs.
@@ -13,12 +12,12 @@ RPCs tested are:
 from collections import defaultdict
 
 from test_framework.blocktools import COINBASE_MATURITY
-from test_framework.test_framework import BitcoinTestFramework
+from test_framework.test_framework import FlocoinTestFramework
 from test_framework.util import assert_equal, assert_raises_rpc_error
 from test_framework.wallet_util import test_address
 
 
-class WalletLabelsTest(BitcoinTestFramework):
+class WalletLabelsTest(FlocoinTestFramework):
     def set_test_params(self):
         self.setup_clean_chain = True
         self.num_nodes = 1
@@ -38,7 +37,7 @@ class WalletLabelsTest(BitcoinTestFramework):
         assert_equal(node.getbalance(), 100)
 
         # there should be 2 address groups
-        # each with 1 address with a balance of 50 Bitcoins
+        # each with 1 address with a balance of 50 Flocoins
         address_groups = node.listaddressgroupings()
         assert_equal(len(address_groups), 2)
         # the addresses aren't linked now, but will be after we send to the
@@ -142,13 +141,13 @@ class WalletLabelsTest(BitcoinTestFramework):
             node.createwallet(wallet_name='watch_only', disable_private_keys=True)
             wallet_watch_only = node.get_wallet_rpc('watch_only')
             BECH32_VALID = {
-                '✔️_VER15_PROG40': 'flort10qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqxkg7fn',
-                '✔️_VER16_PROG03': 'flort1sqqqqq8uhdgr',
-                '✔️_VER16_PROB02': 'flort1sqqqq4wstyw',
+                '✔️_VER15_PROG40': 'bcrt10qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqxkg7fn',
+                '✔️_VER16_PROG03': 'bcrt1sqqqqq8uhdgr',
+                '✔️_VER16_PROB02': 'bcrt1sqqqq4wstyw',
             }
             BECH32_INVALID = {
-                '❌_VER15_PROG41': 'flort1sqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqajlxj8',
-                '❌_VER16_PROB01': 'flort1sqq5r4036',
+                '❌_VER15_PROG41': 'bcrt1sqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqajlxj8',
+                '❌_VER16_PROB01': 'bcrt1sqq5r4036',
             }
             for l in BECH32_VALID:
                 ad = BECH32_VALID[l]
@@ -160,7 +159,7 @@ class WalletLabelsTest(BitcoinTestFramework):
                 ad = BECH32_INVALID[l]
                 assert_raises_rpc_error(
                     -5,
-                    "Address is not valid" if self.options.descriptors else "Invalid Bitcoin address or script",
+                    "Address is not valid" if self.options.descriptors else "Invalid Flocoin address or script",
                     lambda: wallet_watch_only.importaddress(label=l, rescan=False, address=ad),
                 )
 

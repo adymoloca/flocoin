@@ -1,5 +1,4 @@
 // Copyright (c) 2019-2020 The Bitcoin Core developers
-// Copyright (c) Flo Developers 2013-2021
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -107,6 +106,8 @@ IsMineResult IsMineInner(const LegacyScriptPubKeyMan& keystore, const CScript& s
     case TxoutType::NONSTANDARD:
     case TxoutType::NULL_DATA:
     case TxoutType::WITNESS_UNKNOWN:
+    case TxoutType::WITNESS_V1_TAPROOT:
+        break;
     case TxoutType::PUBKEY:
         keyID = CPubKey(vSolutions[0]).GetID();
         if (!PermitsUncompressed(sigversion) && vSolutions[0].size() != 33) {
@@ -1913,6 +1914,13 @@ bool DescriptorScriptPubKeyMan::SetupDescriptorGeneration(const CExtKey& master_
     case OutputType::BECH32M: assert(false); // TODO: Setup taproot descriptor
     } // no default case, so the compiler can warn about missing cases
     assert(!desc_prefix.empty());
+
+    // Mainnet derives at 0', testnet and regtest derive at 1'
+    if (Params().IsTestChain()) {
+        desc_prefix += "/1'";
+    } else {
+        desc_prefix += "/0'";
+    }
 
     std::string internal_path = internal ? "/1" : "/0";
     std::string desc_str = desc_prefix + "/0'" + internal_path + desc_suffix;

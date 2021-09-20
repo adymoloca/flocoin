@@ -3,8 +3,8 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#ifndef BITCOIN_SCRIPT_SIGCACHE_H
-#define BITCOIN_SCRIPT_SIGCACHE_H
+#ifndef FLOCOIN_SCRIPT_SIGCACHE_H
+#define FLOCOIN_SCRIPT_SIGCACHE_H
 
 #include <script/interpreter.h>
 #include <span.h>
@@ -30,8 +30,9 @@ public:
     CachingTransactionSignatureChecker(const CTransaction* txToIn, unsigned int nInIn, const CAmount& amountIn, bool storeIn, PrecomputedTransactionData& txdataIn) : TransactionSignatureChecker(txToIn, nInIn, amountIn, txdataIn, MissingDataBehavior::ASSERT_FAIL), store(storeIn) {}
 
     bool VerifyECDSASignature(const std::vector<unsigned char>& vchSig, const CPubKey& vchPubKey, const uint256& sighash) const override;
+    bool VerifySchnorrSignature(Span<const unsigned char> sig, const XOnlyPubKey& pubkey, const uint256& sighash) const override;
 };
 
 void InitSignatureCache();
 
-#endif // BITCOIN_SCRIPT_SIGCACHE_H
+#endif // FLOCOIN_SCRIPT_SIGCACHE_H

@@ -1,5 +1,4 @@
 // Copyright (c) 2011-2020 The Bitcoin Core developers
-// Copyright (c) Flo Developers 2013-2021
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -120,7 +119,7 @@ BOOST_AUTO_TEST_CASE(util_ParseHex)
     std::vector<unsigned char> result;
     std::vector<unsigned char> expected(ParseHex_expected, ParseHex_expected + sizeof(ParseHex_expected));
     // Basic test vector
-    result = ParseHex("04678afdb0fe5548271967f1a67130b7105cd6a828e03909a67962e0ea1f61deb649f6bc3f4cef38c4f35504e51ec112de5c384df7ba0b8d578a4c702b6bf11d5f");
+    result = ParseHex("040184710fa689ad5023690c80f3a49c8f13f8d45b8c857fbcbc8bc4a8e4d3eb4b10f4d4604fa08dce601aaf0f470216fe1b51850b4acf21b179c45070ac7b03a9");
     BOOST_CHECK_EQUAL_COLLECTIONS(result.begin(), result.end(), expected.begin(), expected.end());
 
     // Spaces between bytes must be supported
@@ -140,7 +139,7 @@ BOOST_AUTO_TEST_CASE(util_HexStr)
 {
     BOOST_CHECK_EQUAL(
         HexStr(ParseHex_expected),
-        "04678afdb0fe5548271967f1a67130b7105cd6a828e03909a67962e0ea1f61deb649f6bc3f4cef38c4f35504e51ec112de5c384df7ba0b8d578a4c702b6bf11d5f");
+        "040184710fa689ad5023690c80f3a49c8f13f8d45b8c857fbcbc8bc4a8e4d3eb4b10f4d4604fa08dce601aaf0f470216fe1b51850b4acf21b179c45070ac7b03a9");
 
     BOOST_CHECK_EQUAL(
         HexStr(Span<const unsigned char>(
@@ -901,8 +900,8 @@ struct ArgsMergeTestingSetup : public BasicTestingSetup {
             ForEachNoDup(conf_actions, SET, SECTION_NEGATE, [&] {
                 for (bool soft_set : {false, true}) {
                     for (bool force_set : {false, true}) {
-                        for (const std::string& section : {CBaseChainParams::MAIN, CBaseChainParams::TESTNET}) {
-                            for (const std::string& network : {CBaseChainParams::MAIN, CBaseChainParams::TESTNET}) {
+                        for (const std::string& section : {CBaseChainParams::MAIN, CBaseChainParams::TESTNET, CBaseChainParams::SIGNET}) {
+                            for (const std::string& network : {CBaseChainParams::MAIN, CBaseChainParams::TESTNET, CBaseChainParams::SIGNET}) {
                                 for (bool net_specific : {false, true}) {
                                     fn(arg_actions, conf_actions, soft_set, force_set, section, network, net_specific);
                                 }
@@ -1049,7 +1048,7 @@ BOOST_FIXTURE_TEST_CASE(util_ArgsMerge, ArgsMergeTestingSetup)
 
     // If check below fails, should manually dump the results with:
     //
-    //   ARGS_MERGE_TEST_OUT=results.txt ./test_bitcoin --run_test=util_tests/util_ArgsMerge
+    //   ARGS_MERGE_TEST_OUT=results.txt ./test_flocoin --run_test=util_tests/util_ArgsMerge
     //
     // And verify diff against previous results to make sure the changes are expected.
     //
@@ -1152,7 +1151,7 @@ BOOST_FIXTURE_TEST_CASE(util_ChainMerge, ChainMergeTestingSetup)
 
     // If check below fails, should manually dump the results with:
     //
-    //   CHAIN_MERGE_TEST_OUT=results.txt ./test_bitcoin --run_test=util_tests/util_ChainMerge
+    //   CHAIN_MERGE_TEST_OUT=results.txt ./test_flocoin --run_test=util_tests/util_ChainMerge
     //
     // And verify diff against previous results to make sure the changes are expected.
     //
@@ -1963,7 +1962,7 @@ BOOST_AUTO_TEST_CASE(test_ToUpper)
 BOOST_AUTO_TEST_CASE(test_Capitalize)
 {
     BOOST_CHECK_EQUAL(Capitalize(""), "");
-    BOOST_CHECK_EQUAL(Capitalize("bitcoin"), "Bitcoin");
+    BOOST_CHECK_EQUAL(Capitalize("flocoin"), "Flocoin");
     BOOST_CHECK_EQUAL(Capitalize("\x00\xfe\xff"), "\x00\xfe\xff");
 }
 

@@ -1,5 +1,4 @@
 // Copyright (c) 2016-2020 The Bitcoin Core developers
-// Copyright (c) Flo Developers 2013-2021
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -13,21 +12,21 @@ const struct VBDeploymentInfo VersionBitsDeploymentInfo[Consensus::MAX_VERSION_B
         /*.gbt_force =*/ true,
     },
     {
-        /*.name =*/ "csv",
+        /*.name =*/ "taproot",
         /*.gbt_force =*/ true,
     },
-    {
-        /*.name =*/ "segwit",
-        /*.gbt_force =*/ true,
-    }
 };
 
-std::string DeploymentName(Consensus::DeploymentPos dep)
+std::string DeploymentName(Consensus::BuriedDeployment dep)
 {
     assert(ValidDeployment(dep));
     switch (dep) {
-    case Consensus::DEPLOYMENT_TESTDUMMY:
-        return "testdummy";
+    case Consensus::DEPLOYMENT_HEIGHTINCB:
+        return "bip34";
+    case Consensus::DEPLOYMENT_CLTV:
+        return "bip65";
+    case Consensus::DEPLOYMENT_DERSIG:
+        return "bip66";
     case Consensus::DEPLOYMENT_CSV:
         return "csv";
     case Consensus::DEPLOYMENT_SEGWIT:

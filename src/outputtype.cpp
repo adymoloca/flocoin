@@ -1,6 +1,5 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
 // Copyright (c) 2009-2020 The Bitcoin Core developers
-// Copyright (c) Flo Developers 2013-2021
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -118,6 +117,10 @@ std::optional<OutputType> OutputTypeFromDestination(const CTxDestination& dest) 
     if (std::holds_alternative<WitnessV0KeyHash>(dest) ||
         std::holds_alternative<WitnessV0ScriptHash>(dest)) {
         return OutputType::BECH32;
+    }
+    if (std::holds_alternative<WitnessV1Taproot>(dest) ||
+        std::holds_alternative<WitnessUnknown>(dest)) {
+        return OutputType::BECH32M;
     }
     return std::nullopt;
 }

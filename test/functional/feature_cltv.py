@@ -25,7 +25,7 @@ from test_framework.script import (
     OP_CHECKLOCKTIMEVERIFY,
     OP_DROP,
 )
-from test_framework.test_framework import BitcoinTestFramework
+from test_framework.test_framework import FlocoinTestFramework
 from test_framework.util import assert_equal
 from test_framework.wallet import (
     MiniWallet,
@@ -77,7 +77,7 @@ def cltv_validate(tx, height):
     cltv_modify_tx(tx, prepend_scriptsig=scheme[0], nsequence=scheme[1], nlocktime=scheme[2])
 
 
-class BIP65Test(BitcoinTestFramework):
+class BIP65Test(FlocoinTestFramework):
     def set_test_params(self):
         self.num_nodes = 1
         self.extra_args = [[

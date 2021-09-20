@@ -237,7 +237,7 @@ public:
         bool sign,
         int& change_pos,
         CAmount& fee,
-        std::string strFloData
+        std::string strFloData,
         bilingual_str& fail_reason) override
     {
         LOCK(m_wallet->cs_wallet);

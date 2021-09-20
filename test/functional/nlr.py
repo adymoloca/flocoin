@@ -12,10 +12,10 @@
 
 import time
 
-from test_framework.test_framework import BitcoinTestFramework
+from test_framework.test_framework import FlocoinTestFramework
 from test_framework.util import assert_equal
 
-class GetChainTipsTest (BitcoinTestFramework):
+class GetChainTipsTest (FlocoinTestFramework):
     def __init__(self):
         super().__init__()
         self.num_nodes = 4

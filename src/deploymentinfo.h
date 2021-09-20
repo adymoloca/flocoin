@@ -2,8 +2,8 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#ifndef BITCOIN_DEPLOYMENTINFO_H
-#define BITCOIN_DEPLOYMENTINFO_H
+#ifndef FLOCOIN_DEPLOYMENTINFO_H
+#define FLOCOIN_DEPLOYMENTINFO_H
 
 #include <consensus/params.h>
 
@@ -18,10 +18,12 @@ struct VBDeploymentInfo {
 
 extern const VBDeploymentInfo VersionBitsDeploymentInfo[Consensus::MAX_VERSION_BITS_DEPLOYMENTS];
 
+std::string DeploymentName(Consensus::BuriedDeployment dep);
+
 inline std::string DeploymentName(Consensus::DeploymentPos pos)
 {
     assert(Consensus::ValidDeployment(pos));
     return VersionBitsDeploymentInfo[pos].name;
 }
 
-#endif // BITCOIN_DEPLOYMENTINFO_H
+#endif // FLOCOIN_DEPLOYMENTINFO_H

@@ -1,10 +1,9 @@
 // Copyright (c) 2018-2021 The Bitcoin Core developers
-// Copyright (c) Flo Developers 2013-2021
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#ifndef BITCOIN_EXTERNAL_SIGNER_H
-#define BITCOIN_EXTERNAL_SIGNER_H
+#ifndef FLOCOIN_EXTERNAL_SIGNER_H
+#define FLOCOIN_EXTERNAL_SIGNER_H
 
 #include <univalue.h>
 #include <util/system.h>
@@ -22,7 +21,7 @@ private:
     //! The command which handles interaction with the external signer.
     std::string m_command;
 
-    //! Bitcoin mainnet, testnet, etc
+    //! Flocoin mainnet, testnet, etc
     std::string m_chain;
 
     const std::string NetworkArg() const;
@@ -30,7 +29,7 @@ private:
 public:
     //! @param[in] command      the command which handles interaction with the external signer
     //! @param[in] fingerprint  master key fingerprint of the signer
-    //! @param[in] chain        "main", "test" or "regtest" 
+    //! @param[in] chain        "main", "test", "regtest" or "signet"
     //! @param[in] name         device name
     ExternalSigner(const std::string& command, const std::string chain, const std::string& fingerprint, const std::string name);
 
@@ -43,7 +42,7 @@ public:
     //! Obtain a list of signers. Calls `<command> enumerate`.
     //! @param[in]              command the command which handles interaction with the external signer
     //! @param[in,out] signers  vector to which new signers (with a unique master key fingerprint) are added
-    //! @param chain            "main", "test" or "regtest"
+    //! @param chain            "main", "test", "regtest" or "signet"
     //! @returns success
     static bool Enumerate(const std::string& command, std::vector<ExternalSigner>& signers, const std::string chain);
 
@@ -64,4 +63,4 @@ public:
     bool SignTransaction(PartiallySignedTransaction& psbt, std::string& error);
 };
 
-#endif // BITCOIN_EXTERNAL_SIGNER_H
+#endif // FLOCOIN_EXTERNAL_SIGNER_H

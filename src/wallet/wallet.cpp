@@ -1,6 +1,5 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
 // Copyright (c) 2009-2020 The Bitcoin Core developers
-// Copyright (c) Flo Developers 2013-2021
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -966,9 +965,9 @@ CWalletTx* CWallet::AddToWallet(CTransactionRef tx, const CWalletTx::Confirmatio
 #ifndef WIN32
         // Substituting the wallet name isn't currently supported on windows
         // because windows shell escaping has not been implemented yet:
-        // https://github.com/bitcoin/bitcoin/pull/13339#issuecomment-537384875
+        // https://github.com/flocoin/flocoin/pull/13339#issuecomment-537384875
         // A few ways it could be implemented in the future are described in:
-        // https://github.com/bitcoin/bitcoin/pull/13339#issuecomment-461288094
+        // https://github.com/flocoin/flocoin/pull/13339#issuecomment-461288094
         boost::replace_all(strCmd, "%w", ShellEscape(GetName()));
 #endif
         std::thread t(runCommand, strCmd);
@@ -1227,7 +1226,7 @@ void CWallet::transactionRemovedFromMempool(const CTransactionRef& tx, MemPoolRe
         //    provide the conflicting block's hash and height, and for backwards
         //    compatibility reasons it may not be not safe to store conflicted
         //    wallet transactions with a null block hash. See
-        //    https://github.com/bitcoin/bitcoin/pull/18600#discussion_r420195993.
+        //    https://github.com/flocoin/flocoin/pull/18600#discussion_r420195993.
         // 2. For most of these transactions, the wallet's internal conflict
         //    detection in the blockConnected handler will subsequently call
         //    MarkConflicted and update them with CONFLICTED status anyway. This
@@ -1235,7 +1234,7 @@ void CWallet::transactionRemovedFromMempool(const CTransactionRef& tx, MemPoolRe
         //    block, or that has ancestors in the wallet with inputs spent by
         //    the block.
         // 3. Longstanding behavior since the sync implementation in
-        //    https://github.com/bitcoin/bitcoin/pull/9371 and the prior sync
+        //    https://github.com/flocoin/flocoin/pull/9371 and the prior sync
         //    implementation before that was to mark these transactions
         //    unconfirmed rather than conflicted.
         //
@@ -1243,7 +1242,7 @@ void CWallet::transactionRemovedFromMempool(const CTransactionRef& tx, MemPoolRe
         // when improving this code in the future. The wallet's heuristics for
         // distinguishing between conflicted and unconfirmed transactions are
         // imperfect, and could be improved in general, see
-        // https://github.com/bitcoin-core/bitcoin-devwiki/wiki/Wallet-Transaction-Conflict-Tracking
+        // https://github.com/flocoin-core/flocoin-devwiki/wiki/Wallet-Transaction-Conflict-Tracking
         SyncTransaction(tx, {CWalletTx::Status::UNCONFIRMED, /* block height */ 0, /* block hash */ {}, /* index */ 0});
     }
 }
@@ -1824,7 +1823,7 @@ bool CWallet::SignTransaction(CMutableTransaction& tx) const
         coins[input.prevout] = Coin(wtx.tx->vout[input.prevout.n], wtx.m_confirm.block_height, wtx.IsCoinBase());
     }
     std::map<int, std::string> input_errors;
-    return SignTransaction(tx, coins, nHashType, input_errors);
+    return SignTransaction(tx, coins, SIGHASH_DEFAULT, input_errors);
 }
 
 bool CWallet::SignTransaction(CMutableTransaction& tx, const std::map<COutPoint, Coin>& coins, int sighash, std::map<int, std::string>& input_errors) const
@@ -2373,8 +2372,8 @@ void CWallet::GetKeyBirthTimes(std::map<CKeyID, int64_t>& mapKeyBirth) const {
  *   the block time.
  *
  * For more information see CWalletTx::nTimeSmart,
- * https://bitcointalk.org/?topic=54527, or
- * https://github.com/bitcoin/bitcoin/pull/1393.
+ * https://flocointalk.org/?topic=54527, or
+ * https://github.com/flocoin/flocoin/pull/1393.
  */
 unsigned int CWallet::ComputeTimeSmart(const CWalletTx& wtx) const
 {

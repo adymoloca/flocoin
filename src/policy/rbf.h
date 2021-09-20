@@ -2,8 +2,8 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#ifndef BITCOIN_POLICY_RBF_H
-#define BITCOIN_POLICY_RBF_H
+#ifndef FLOCOIN_POLICY_RBF_H
+#define FLOCOIN_POLICY_RBF_H
 
 #include <txmempool.h>
 
@@ -31,4 +31,4 @@ enum class RBFTransactionState {
 RBFTransactionState IsRBFOptIn(const CTransaction& tx, const CTxMemPool& pool) EXCLUSIVE_LOCKS_REQUIRED(pool.cs);
 RBFTransactionState IsRBFOptInEmptyMempool(const CTransaction& tx);
 
-#endif // BITCOIN_POLICY_RBF_H
+#endif // FLOCOIN_POLICY_RBF_H

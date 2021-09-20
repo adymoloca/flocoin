@@ -3,8 +3,8 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#ifndef BITCOIN_SYNC_H
-#define BITCOIN_SYNC_H
+#ifndef FLOCOIN_SYNC_H
+#define FLOCOIN_SYNC_H
 
 #include <threadsafety.h>
 #include <util/macros.h>
@@ -371,4 +371,4 @@ public:
     }
 };
 
-#endif // BITCOIN_SYNC_H
+#endif // FLOCOIN_SYNC_H

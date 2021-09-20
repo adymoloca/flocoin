@@ -1,5 +1,4 @@
 // Copyright (c) 2018-2020 The Bitcoin Core developers
-// Copyright (c) Flo Developers 2013-2021
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -48,7 +47,7 @@
 #include <warnings.h>
 
 #if defined(HAVE_CONFIG_H)
-#include <config/bitcoin-config.h>
+#include <config/flocoin-config.h>
 #endif
 
 #include <any>
@@ -689,6 +688,12 @@ public:
         for (const CTxMemPoolEntry& entry : m_node.mempool->mapTx) {
             notifications.transactionAddedToMempool(entry.GetSharedTx(), 0 /* mempool_sequence */);
         }
+    }
+    bool isTaprootActive() const override
+    {
+        LOCK(::cs_main);
+        const CBlockIndex* tip = Assert(m_node.chainman)->ActiveChain().Tip();
+        return DeploymentActiveAfter(tip, Params().GetConsensus(), Consensus::DEPLOYMENT_TAPROOT);
     }
     NodeContext& m_node;
 };

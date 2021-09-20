@@ -59,7 +59,7 @@ static UniValue GetNetworkHashPS(int lookup, int height, const CChain& active_ch
 
     // If lookup is -1, then use blocks since last difficulty change.
     if (lookup <= 0)
-        lookup = pb->nHeight % Params().GetConsensus().DifficultyAdjustmentInterval() + 1;
+        lookup = pb->nHeight % Params().GetConsensus().DifficultyAdjustmentInterval(pb->nHeight) + 1;
 
     // If lookup is larger than chain, then set it to chain length.
     if (lookup > pb->nHeight)
@@ -121,7 +121,7 @@ static bool GenerateBlock(ChainstateManager& chainman, CBlock& block, uint64_t& 
 
     CChainParams chainparams(Params());
 
-    while (max_tries > 0 && block.nNonce < std::numeric_limits<uint32_t>::max() && !CheckProofOfWork(block.GetHash(), block.nBits, chainparams.GetConsensus()) && !ShutdownRequested()) {
+    while (max_tries > 0 && block.nNonce < std::numeric_limits<uint32_t>::max() && !CheckProofOfWork(block.GetPoWHash(), block.nBits, chainparams.GetConsensus()) && !ShutdownRequested()) {
         ++block.nNonce;
         --max_tries;
     }
@@ -214,8 +214,9 @@ static RPCHelpMan generatetodescriptor()
         "\nMine blocks immediately to a specified descriptor (before the RPC call returns)\n",
         {
             {"num_blocks", RPCArg::Type::NUM, RPCArg::Optional::NO, "How many blocks are generated immediately."},
-            {"descriptor", RPCArg::Type::STR, RPCArg::Optional::NO, "The descriptor to send the newly generated bitcoin to."},
+            {"descriptor", RPCArg::Type::STR, RPCArg::Optional::NO, "The descriptor to send the newly generated flocoin to."},
             {"maxtries", RPCArg::Type::NUM, RPCArg::Default{DEFAULT_MAX_TRIES}, "How many iterations to try."},
+            {"floData", RPCArg::Type::STR, RPCArg::Default{""}, "Coinbase transaction floData."},
         },
         RPCResult{
             RPCResult::Type::ARR, "", "hashes of blocks generated",
@@ -263,7 +264,7 @@ static RPCHelpMan generatetoaddress()
                 "\nMine blocks immediately to a specified address (before the RPC call returns)\n",
                 {
                     {"nblocks", RPCArg::Type::NUM, RPCArg::Optional::NO, "How many blocks are generated immediately."},
-                    {"address", RPCArg::Type::STR, RPCArg::Optional::NO, "The address to send the newly generated bitcoin to."},
+                    {"address", RPCArg::Type::STR, RPCArg::Optional::NO, "The address to send the newly generated flocoin to."},
                     {"maxtries", RPCArg::Type::NUM, RPCArg::Default{DEFAULT_MAX_TRIES}, "How many iterations to try."},
                     {"floData", RPCArg::Type::STR, RPCArg::Default{""}, "Coinbase transaction floData."},
                 },
@@ -275,7 +276,7 @@ static RPCHelpMan generatetoaddress()
                 RPCExamples{
             "\nGenerate 11 blocks to myaddress\n"
             + HelpExampleCli("generatetoaddress", "11 \"myaddress\"")
-            + "If you are using the " PACKAGE_NAME " wallet, you can get a new address to send the newly generated bitcoin to with:\n"
+            + "If you are using the " PACKAGE_NAME " wallet, you can get a new address to send the newly generated flocoin to with:\n"
             + HelpExampleCli("getnewaddress", "")
                 },
         [&](const RPCHelpMan& self, const JSONRPCRequest& request) -> UniValue
@@ -309,7 +310,7 @@ static RPCHelpMan generateblock()
     return RPCHelpMan{"generateblock",
         "\nMine a block with a set of ordered transactions immediately to a specified address or descriptor (before the RPC call returns)\n",
         {
-            {"output", RPCArg::Type::STR, RPCArg::Optional::NO, "The address or descriptor to send the newly generated bitcoin to."},
+            {"output", RPCArg::Type::STR, RPCArg::Optional::NO, "The address or descriptor to send the newly generated flocoin to."},
             {"transactions", RPCArg::Type::ARR, RPCArg::Optional::NO, "An array of hex strings which are either txids or raw transactions.\n"
                 "Txids must reference transactions currently in the mempool.\n"
                 "All transactions must be valid and in valid order, otherwise the block will be rejected.",
@@ -429,7 +430,7 @@ static RPCHelpMan getmininginfo()
                         {RPCResult::Type::NUM, "difficulty", "The current difficulty"},
                         {RPCResult::Type::NUM, "networkhashps", "The network hashes per second"},
                         {RPCResult::Type::NUM, "pooledtx", "The size of the mempool"},
-                        {RPCResult::Type::STR, "chain", "current network name (main, test, regtest)"},
+                        {RPCResult::Type::STR, "chain", "current network name (main, test, signet, regtest)"},
                         {RPCResult::Type::STR, "warnings", "any network and blockchain warnings"},
                     }},
                 RPCExamples{
@@ -531,10 +532,10 @@ static RPCHelpMan getblocktemplate()
         "\nIf the request parameters include a 'mode' key, that is used to explicitly select between the default 'template' request or a 'proposal'.\n"
         "It returns data needed to construct a block to work on.\n"
         "For full specification, see BIPs 22, 23, 9, and 145:\n"
-        "    https://github.com/bitcoin/bips/blob/master/bip-0022.mediawiki\n"
-        "    https://github.com/bitcoin/bips/blob/master/bip-0023.mediawiki\n"
-        "    https://github.com/bitcoin/bips/blob/master/bip-0009.mediawiki#getblocktemplate_changes\n"
-        "    https://github.com/bitcoin/bips/blob/master/bip-0145.mediawiki\n",
+        "    https://github.com/flocoin/bips/blob/master/bip-0022.mediawiki\n"
+        "    https://github.com/flocoin/bips/blob/master/bip-0023.mediawiki\n"
+        "    https://github.com/flocoin/bips/blob/master/bip-0009.mediawiki#getblocktemplate_changes\n"
+        "    https://github.com/flocoin/bips/blob/master/bip-0145.mediawiki\n",
         {
             {"template_request", RPCArg::Type::OBJ, RPCArg::Default{UniValue::VOBJ}, "Format of the template",
             {
@@ -682,6 +683,17 @@ static RPCHelpMan getblocktemplate()
     if (strMode != "template")
         throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid mode");
 
+    if (!Params().IsTestChain()) {
+        const CConnman& connman = EnsureConnman(node);
+        if (connman.GetNodeCount(ConnectionDirection::Both) == 0) {
+            throw JSONRPCError(RPC_CLIENT_NOT_CONNECTED, PACKAGE_NAME " is not connected!");
+        }
+
+        if (active_chainstate.IsInitialBlockDownload()) {
+            throw JSONRPCError(RPC_CLIENT_IN_INITIAL_DOWNLOAD, PACKAGE_NAME " is in initial sync and waiting for blocks...");
+        }
+    }
+
     static unsigned int nTransactionsUpdatedLast;
     const CTxMemPool& mempool = EnsureMemPool(node);
 
@@ -733,6 +745,11 @@ static RPCHelpMan getblocktemplate()
     }
 
     const Consensus::Params& consensusParams = Params().GetConsensus();
+
+    // GBT must be called with 'signet' set in the rules for signet chains
+    if (consensusParams.signet_blocks && setClientRules.count("signet") != 1) {
+        throw JSONRPCError(RPC_INVALID_PARAMETER, "getblocktemplate must be called with the signet rule set (call with {\"rules\": [\"segwit\", \"signet\"]})");
+    }
 
     // GBT must be called with 'segwit' set in the rules
     if (setClientRules.count("segwit") != 1) {
@@ -827,6 +844,12 @@ static RPCHelpMan getblocktemplate()
 
     UniValue aRules(UniValue::VARR);
     aRules.push_back("csv");
+    if (!fPreSegWit) aRules.push_back("!segwit");
+    if (consensusParams.signet_blocks) {
+        // indicate to miner that they must understand signet rules
+        // when attempting to mine with this template
+        aRules.push_back("!signet");
+    }
 
     UniValue vbavailable(UniValue::VOBJ);
     for (int j = 0; j < (int)Consensus::MAX_VERSION_BITS_DEPLOYMENTS; ++j) {
@@ -908,6 +931,10 @@ static RPCHelpMan getblocktemplate()
     result.pushKV("bits", strprintf("%08x", pblock->nBits));
     result.pushKV("height", (int64_t)(pindexPrev->nHeight+1));
 
+    if (consensusParams.signet_blocks) {
+        result.pushKV("signet_challenge", HexStr(consensusParams.signet_challenge));
+    }
+
     if (!pblocktemplate->vchCoinbaseCommitment.empty()) {
         result.pushKV("default_witness_commitment", HexStr(pblocktemplate->vchCoinbaseCommitment));
     }
@@ -940,7 +967,7 @@ static RPCHelpMan submitblock()
     // We allow 2 arguments for compliance with BIP22. Argument 2 is ignored.
     return RPCHelpMan{"submitblock",
         "\nAttempts to submit new block to network.\n"
-        "See https://en.bitcoin.it/wiki/BIP_0022 for full specification.\n",
+        "See https://en.flocoin.it/wiki/BIP_0022 for full specification.\n",
         {
             {"hexdata", RPCArg::Type::STR_HEX, RPCArg::Optional::NO, "the hex-encoded block data to submit"},
             {"dummy", RPCArg::Type::STR, RPCArg::DefaultHint{"ignored"}, "dummy value, for compatibility with BIP22. This value is ignored."},

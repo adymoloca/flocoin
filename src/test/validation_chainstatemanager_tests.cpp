@@ -1,5 +1,4 @@
 // Copyright (c) 2019-2020 The Bitcoin Core developers
-// Copyright (c) Flo Developers 2013-2021
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 //
@@ -277,6 +276,7 @@ BOOST_FIXTURE_TEST_CASE(chainstatemanager_activate_snapshot, TestChain100Setup)
         *chainman.ActiveChainstate().m_from_snapshot_blockhash,
         *chainman.SnapshotBlockhash());
 
+    const AssumeutxoData& au_data = *ExpectedAssumeutxo(snapshot_height, ::Params());
     const CBlockIndex* tip = chainman.ActiveTip();
 
     BOOST_CHECK_EQUAL(tip->nChainTx, au_data.nChainTx);

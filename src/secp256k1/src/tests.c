@@ -3162,7 +3162,7 @@ void test_add_neg_y_diff_x(void) {
      * of the sum to be wrong (since infinity has no xy coordinates).
      * HOWEVER, if the x-coordinates are different, infinity is the
      * wrong answer, and such degeneracies are exposed. This is the
-     * root of https://github.com/bitcoin-core/secp256k1/issues/257
+     * root of https://github.com/flocoin-core/secp256k1/issues/257
      * which this test is a regression test for.
      *
      * These points were generated in sage as
@@ -6220,6 +6220,10 @@ void run_ecdsa_openssl(void) {
 # include "modules/extrakeys/tests_impl.h"
 #endif
 
+#ifdef ENABLE_MODULE_SCHNORRSIG
+# include "modules/schnorrsig/tests_impl.h"
+#endif
+
 void run_secp256k1_memczero_test(void) {
     unsigned char buf1[6] = {1, 2, 3, 4, 5, 6};
     unsigned char buf2[sizeof(buf1)];
@@ -6497,6 +6501,10 @@ int main(int argc, char **argv) {
 
 #ifdef ENABLE_MODULE_EXTRAKEYS
     run_extrakeys_tests();
+#endif
+
+#ifdef ENABLE_MODULE_SCHNORRSIG
+    run_schnorrsig_tests();
 #endif
 
     /* util tests */

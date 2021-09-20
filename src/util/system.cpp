@@ -1,6 +1,5 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
 // Copyright (c) 2009-2020 The Bitcoin Core developers
-// Copyright (c) Flo Developers 2013-2021
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -9,7 +8,7 @@
 #ifdef ENABLE_EXTERNAL_SIGNER
 #if defined(WIN32) && !defined(__kernel_entry)
 // A workaround for boost 1.71 incompatibility with mingw-w64 compiler.
-// For details see https://github.com/bitcoin/bitcoin/pull/22348.
+// For details see https://github.com/flocoin/flocoin/pull/22348.
 #define __kernel_entry
 #endif
 #include <boost/process.hpp>
@@ -79,8 +78,8 @@
 // Application startup time (used for uptime calculation)
 const int64_t nStartupTime = GetTime();
 
-const char * const BITCOIN_CONF_FILENAME = "bitcoin.conf";
-const char * const BITCOIN_SETTINGS_FILENAME = "settings.json";
+const char * const FLOCOIN_CONF_FILENAME = "flocoin.conf";
+const char * const FLOCOIN_SETTINGS_FILENAME = "settings.json";
 
 ArgsManager gArgs;
 
@@ -230,7 +229,7 @@ static util::SettingsValue InterpretOption(std::string& section, std::string& ke
  *
  * TODO: Add more meaningful error checks here in the future
  * See "here's how the flags are meant to behave" in
- * https://github.com/bitcoin/bitcoin/pull/16097#issuecomment-514627823
+ * https://github.com/flocoin/flocoin/pull/16097#issuecomment-514627823
  */
 static bool CheckValid(const std::string& key, const util::SettingsValue& val, unsigned int flags, std::string& error)
 {
@@ -285,6 +284,7 @@ const std::list<SectionInfo> ArgsManager::GetUnrecognizedSections() const
     // Section names to be recognized in the config file.
     static const std::set<std::string> available_sections{
         CBaseChainParams::REGTEST,
+        CBaseChainParams::SIGNET,
         CBaseChainParams::TESTNET,
         CBaseChainParams::MAIN
     };
@@ -317,7 +317,7 @@ bool ArgsManager::ParseParameters(int argc, const char* const argv[], std::strin
         if (key.substr(0, 5) == "-psn_") continue;
 #endif
 
-        if (key == "-") break; //bitcoin-tx using stdin
+        if (key == "-") break; //flocoin-tx using stdin
         std::string val;
         size_t is_index = key.find('=');
         if (is_index != std::string::npos) {
@@ -518,7 +518,7 @@ bool ArgsManager::GetSettingsPath(fs::path* filepath, bool temp) const
         return false;
     }
     if (filepath) {
-        std::string settings = GetArg("-settings", BITCOIN_SETTINGS_FILENAME);
+        std::string settings = GetArg("-settings", FLOCOIN_SETTINGS_FILENAME);
         *filepath = fsbridge::AbsPathJoin(GetDataDirNet(), temp ? settings + ".tmp" : settings);
     }
     return true;
@@ -766,7 +766,7 @@ static std::string FormatException(const std::exception* pex, const char* pszThr
     char pszModule[MAX_PATH] = "";
     GetModuleFileNameA(nullptr, pszModule, sizeof(pszModule));
 #else
-    const char* pszModule = "bitcoin";
+    const char* pszModule = "flocoin";
 #endif
     if (pex)
         return strprintf(
@@ -785,12 +785,12 @@ void PrintExceptionContinue(const std::exception* pex, const char* pszThread)
 
 fs::path GetDefaultDataDir()
 {
-    // Windows: C:\Users\Username\AppData\Roaming\Bitcoin
-    // macOS: ~/Library/Application Support/Bitcoin
-    // Unix-like: ~/.bitcoin
+    // Windows: C:\Users\Username\AppData\Roaming\Flocoin
+    // macOS: ~/Library/Application Support/Flocoin
+    // Unix-like: ~/.flocoin
 #ifdef WIN32
     // Windows
-    return GetSpecialFolderPath(CSIDL_APPDATA) / "Bitcoin";
+    return GetSpecialFolderPath(CSIDL_APPDATA) / "Flocoin";
 #else
     fs::path pathRet;
     char* pszHome = getenv("HOME");
@@ -800,10 +800,10 @@ fs::path GetDefaultDataDir()
         pathRet = fs::path(pszHome);
 #ifdef MAC_OSX
     // macOS
-    return pathRet / "Library/Application Support/Bitcoin";
+    return pathRet / "Library/Application Support/Flocoin";
 #else
     // Unix-like
-    return pathRet / ".bitcoin";
+    return pathRet / ".flocoin";
 #endif
 #endif
 }
@@ -901,7 +901,7 @@ bool ArgsManager::ReadConfigFiles(std::string& error, bool ignore_invalid_keys)
         m_config_sections.clear();
     }
 
-    const std::string confPath = GetArg("-conf", BITCOIN_CONF_FILENAME);
+    const std::string confPath = GetArg("-conf", FLOCOIN_CONF_FILENAME);
     fsbridge::ifstream stream(GetConfigFile(confPath));
 
     // ok to not have a config file
@@ -991,14 +991,18 @@ std::string ArgsManager::GetChainName() const
     };
 
     const bool fRegTest = get_net("-regtest");
+    const bool fSigNet  = get_net("-signet");
     const bool fTestNet = get_net("-testnet");
     const bool is_chain_arg_set = IsArgSet("-chain");
 
-    if ((int)is_chain_arg_set + (int)fRegTest + (int)fTestNet > 1) {
-        throw std::runtime_error("Invalid combination of -regtest, -testnet and -chain. Can use at most one.");
+    if ((int)is_chain_arg_set + (int)fRegTest + (int)fSigNet + (int)fTestNet > 1) {
+        throw std::runtime_error("Invalid combination of -regtest, -signet, -testnet and -chain. Can use at most one.");
     }
     if (fRegTest)
         return CBaseChainParams::REGTEST;
+    if (fSigNet) {
+        return CBaseChainParams::SIGNET;
+    }
     if (fTestNet)
         return CBaseChainParams::TESTNET;
 
@@ -1342,9 +1346,9 @@ std::string CopyrightHolders(const std::string& strPrefix)
     const auto copyright_devs = strprintf(_(COPYRIGHT_HOLDERS).translated, COPYRIGHT_HOLDERS_SUBSTITUTION);
     std::string strCopyrightHolders = strPrefix + copyright_devs;
 
-    // Make sure Bitcoin Core copyright is not removed by accident
-    if (copyright_devs.find("Bitcoin Core") == std::string::npos) {
-        strCopyrightHolders += "\n" + strPrefix + "The Bitcoin Core developers";
+    // Make sure Flocoin Core copyright is not removed by accident
+    if (copyright_devs.find("Flocoin Core") == std::string::npos) {
+        strCopyrightHolders += "\n" + strPrefix + "The Flocoin Core developers";
     }
     return strCopyrightHolders;
 }

@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 # Copyright (c) 2012-2020 The Bitcoin Core developers
-# Copyright (c) Flo Developers 2013-2021
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 '''
@@ -57,50 +56,58 @@ templates = [
   ((SCRIPT_ADDRESS,),         20, (),   (False, 'main',    None,  None), script_prefix, script_suffix),
   ((PUBKEY_ADDRESS_TEST,),    20, (),   (False, 'test',    None,  None), pubkey_prefix, pubkey_suffix),
   ((SCRIPT_ADDRESS_TEST,),    20, (),   (False, 'test',    None,  None), script_prefix, script_suffix),
+  ((PUBKEY_ADDRESS_TEST,),    20, (),   (False, 'signet',  None,  None), pubkey_prefix, pubkey_suffix),
+  ((SCRIPT_ADDRESS_TEST,),    20, (),   (False, 'signet',  None,  None), script_prefix, script_suffix),
   ((PUBKEY_ADDRESS_REGTEST,), 20, (),   (False, 'regtest', None,  None), pubkey_prefix, pubkey_suffix),
   ((SCRIPT_ADDRESS_REGTEST,), 20, (),   (False, 'regtest', None,  None), script_prefix, script_suffix),
   ((PRIVKEY,),                32, (),   (True,  'main',    False, None), (),            ()),
   ((PRIVKEY,),                32, (1,), (True,  'main',    True,  None), (),            ()),
   ((PRIVKEY_TEST,),           32, (),   (True,  'test',    False, None), (),            ()),
   ((PRIVKEY_TEST,),           32, (1,), (True,  'test',    True,  None), (),            ()),
+  ((PRIVKEY_TEST,),           32, (),   (True,  'signet',  False, None), (),            ()),
+  ((PRIVKEY_TEST,),           32, (1,), (True,  'signet',  True,  None), (),            ()),
   ((PRIVKEY_REGTEST,),        32, (),   (True,  'regtest', False, None), (),            ()),
   ((PRIVKEY_REGTEST,),        32, (1,), (True,  'regtest', True,  None), (),            ())
 ]
 # templates for valid bech32 sequences
 bech32_templates = [
   # hrp, version, witprog_size, metadata, encoding, output_prefix
-  ('floc',    0, 20, (False, 'main',    None, True), Encoding.BECH32,  p2wpkh_prefix),
-  ('floc',    0, 32, (False, 'main',    None, True), Encoding.BECH32,  p2wsh_prefix),
-  ('floc',    1, 32, (False, 'main',    None, True), Encoding.BECH32M, p2tr_prefix),
-  ('floc',    2,  2, (False, 'main',    None, True), Encoding.BECH32M, (OP_2, 2)),
-  ('tflo',    0, 20, (False, 'test',    None, True), Encoding.BECH32,  p2wpkh_prefix),
-  ('tflo',    0, 32, (False, 'test',    None, True), Encoding.BECH32,  p2wsh_prefix),
-  ('tflo',    1, 32, (False, 'test',    None, True), Encoding.BECH32M, p2tr_prefix),
-  ('tflo',    3, 16, (False, 'test',    None, True), Encoding.BECH32M, (OP_3, 16)),
-  ('flort',  0, 20, (False, 'regtest', None, True), Encoding.BECH32,  p2wpkh_prefix),
-  ('flort',  0, 32, (False, 'regtest', None, True), Encoding.BECH32,  p2wsh_prefix),
-  ('flort',  1, 32, (False, 'regtest', None, True), Encoding.BECH32M, p2tr_prefix),
-  ('flort', 16, 40, (False, 'regtest', None, True), Encoding.BECH32M, (OP_16, 40))
+  ('bc',    0, 20, (False, 'main',    None, True), Encoding.BECH32,  p2wpkh_prefix),
+  ('bc',    0, 32, (False, 'main',    None, True), Encoding.BECH32,  p2wsh_prefix),
+  ('bc',    1, 32, (False, 'main',    None, True), Encoding.BECH32M, p2tr_prefix),
+  ('bc',    2,  2, (False, 'main',    None, True), Encoding.BECH32M, (OP_2, 2)),
+  ('tb',    0, 20, (False, 'test',    None, True), Encoding.BECH32,  p2wpkh_prefix),
+  ('tb',    0, 32, (False, 'test',    None, True), Encoding.BECH32,  p2wsh_prefix),
+  ('tb',    1, 32, (False, 'test',    None, True), Encoding.BECH32M, p2tr_prefix),
+  ('tb',    3, 16, (False, 'test',    None, True), Encoding.BECH32M, (OP_3, 16)),
+  ('tb',    0, 20, (False, 'signet',  None, True), Encoding.BECH32,  p2wpkh_prefix),
+  ('tb',    0, 32, (False, 'signet',  None, True), Encoding.BECH32,  p2wsh_prefix),
+  ('tb',    1, 32, (False, 'signet',  None, True), Encoding.BECH32M, p2tr_prefix),
+  ('tb',    3, 32, (False, 'signet',  None, True), Encoding.BECH32M, (OP_3, 32)),
+  ('bcrt',  0, 20, (False, 'regtest', None, True), Encoding.BECH32,  p2wpkh_prefix),
+  ('bcrt',  0, 32, (False, 'regtest', None, True), Encoding.BECH32,  p2wsh_prefix),
+  ('bcrt',  1, 32, (False, 'regtest', None, True), Encoding.BECH32M, p2tr_prefix),
+  ('bcrt', 16, 40, (False, 'regtest', None, True), Encoding.BECH32M, (OP_16, 40))
 ]
 # templates for invalid bech32 sequences
 bech32_ng_templates = [
   # hrp, version, witprog_size, encoding, invalid_bech32, invalid_checksum, invalid_char
   ('tc',    0, 20, Encoding.BECH32,  False, False, False),
   ('bt',    1, 32, Encoding.BECH32M, False, False, False),
-  ('tflo',   17, 32, Encoding.BECH32M, False, False, False),
-  ('flort',  3,  1, Encoding.BECH32M, False, False, False),
-  ('floc',   15, 41, Encoding.BECH32M, False, False, False),
-  ('tflo',    0, 16, Encoding.BECH32,  False, False, False),
-  ('flort',  0, 32, Encoding.BECH32,  True,  False, False),
-  ('floc',    0, 16, Encoding.BECH32,  True,  False, False),
-  ('tflo',    0, 32, Encoding.BECH32,  False, True,  False),
-  ('flort',  0, 20, Encoding.BECH32,  False, False, True),
-  ('floc',    0, 20, Encoding.BECH32M, False, False, False),
-  ('tflo',    0, 32, Encoding.BECH32M, False, False, False),
-  ('flort',  0, 20, Encoding.BECH32M, False, False, False),
-  ('floc',    1, 32, Encoding.BECH32,  False, False, False),
-  ('tflo',    2, 16, Encoding.BECH32,  False, False, False),
-  ('flort', 16, 20, Encoding.BECH32,  False, False, False),
+  ('tb',   17, 32, Encoding.BECH32M, False, False, False),
+  ('bcrt',  3,  1, Encoding.BECH32M, False, False, False),
+  ('bc',   15, 41, Encoding.BECH32M, False, False, False),
+  ('tb',    0, 16, Encoding.BECH32,  False, False, False),
+  ('bcrt',  0, 32, Encoding.BECH32,  True,  False, False),
+  ('bc',    0, 16, Encoding.BECH32,  True,  False, False),
+  ('tb',    0, 32, Encoding.BECH32,  False, True,  False),
+  ('bcrt',  0, 20, Encoding.BECH32,  False, False, True),
+  ('bc',    0, 20, Encoding.BECH32M, False, False, False),
+  ('tb',    0, 32, Encoding.BECH32M, False, False, False),
+  ('bcrt',  0, 20, Encoding.BECH32M, False, False, False),
+  ('bc',    1, 32, Encoding.BECH32,  False, False, False),
+  ('tb',    2, 16, Encoding.BECH32,  False, False, False),
+  ('bcrt', 16, 20, Encoding.BECH32,  False, False, False),
 ]
 
 def is_valid(v):
@@ -120,7 +127,7 @@ def is_valid(v):
 
 def is_valid_bech32(v):
     '''Check vector v for bech32 validity'''
-    for hrp in ['floc', 'tflo', 'flort']:
+    for hrp in ['bc', 'tb', 'bcrt']:
         if decode_segwit_address(hrp, v) != (None, None):
             return True
     return False

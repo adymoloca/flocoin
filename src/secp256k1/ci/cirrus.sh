@@ -17,6 +17,7 @@ valgrind --version || true
     --with-test-override-wide-multiply="$WIDEMUL" --with-asm="$ASM" \
     --enable-ecmult-static-precomputation="$STATICPRECOMPUTATION" --with-ecmult-gen-precision="$ECMULTGENPRECISION" \
     --enable-module-ecdh="$ECDH" --enable-module-recovery="$RECOVERY" \
+    --enable-module-schnorrsig="$SCHNORRSIG" \
     --with-valgrind="$WITH_VALGRIND" \
     --host="$HOST" $EXTRAFLAGS
 
@@ -73,6 +74,10 @@ then
     if [ "$ECDH" = "yes" ]
     then
         $EXEC ./bench_ecdh >> bench.log 2>&1
+    fi
+    if [ "$SCHNORRSIG" = "yes" ]
+    then
+        $EXEC ./bench_schnorrsig >> bench.log 2>&1
     fi
 fi
 if [ "$CTIMETEST" = "yes" ]

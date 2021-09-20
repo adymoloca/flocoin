@@ -1,23 +1,22 @@
 #!/usr/bin/env python3
 # Copyright (c) 2020 The Bitcoin Core developers
-# Copyright (c) Flo Developers 2013-2021
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 """Test error messages for 'getaddressinfo' and 'validateaddress' RPC commands."""
 
-from test_framework.test_framework import BitcoinTestFramework
+from test_framework.test_framework import FlocoinTestFramework
 
 from test_framework.util import (
     assert_equal,
     assert_raises_rpc_error,
 )
 
-BECH32_VALID = 'flort1qtmp74ayg7p24uslctssvjm06q5phz4yrxucgnv'
-BECH32_INVALID_BECH32 = 'flort1p0xlxvlhemja6c4dqv22uapctqupfhlxm9h8z3k2e72q4k9hcz7vqdmchcc'
-BECH32_INVALID_BECH32M = 'flort1qw508d6qejxtdg4y5r3zarvary0c5xw7k35mrzd'
-BECH32_INVALID_VERSION = 'flort130xlxvlhemja6c4dqv22uapctqupfhlxm9h8z3k2e72q4k9hcz7vqynjegk'
-BECH32_INVALID_SIZE = 'flort1s0xlxvlhemja6c4dqv22uapctqupfhlxm9h8z3k2e72q4k9hcz7v8n0nx0muaewav25430mtr'
-BECH32_INVALID_V0_SIZE = 'flort1qw508d6qejxtdg4y5r3zarvary0c5xw7kqqq5k3my'
+BECH32_VALID = 'bcrt1qtmp74ayg7p24uslctssvjm06q5phz4yrxucgnv'
+BECH32_INVALID_BECH32 = 'bcrt1p0xlxvlhemja6c4dqv22uapctqupfhlxm9h8z3k2e72q4k9hcz7vqdmchcc'
+BECH32_INVALID_BECH32M = 'bcrt1qw508d6qejxtdg4y5r3zarvary0c5xw7k35mrzd'
+BECH32_INVALID_VERSION = 'bcrt130xlxvlhemja6c4dqv22uapctqupfhlxm9h8z3k2e72q4k9hcz7vqynjegk'
+BECH32_INVALID_SIZE = 'bcrt1s0xlxvlhemja6c4dqv22uapctqupfhlxm9h8z3k2e72q4k9hcz7v8n0nx0muaewav25430mtr'
+BECH32_INVALID_V0_SIZE = 'bcrt1qw508d6qejxtdg4y5r3zarvary0c5xw7kqqq5k3my'
 BECH32_INVALID_PREFIX = 'bc1pw508d6qejxtdg4y5r3zarvary0c5xw7kw508d6qejxtdg4y5r3zarvary0c5xw7k7grplx'
 
 BASE58_VALID = 'mipcBbFg9gMiCh81Kj8tqqdgoZub1ZJRfn'
@@ -25,7 +24,7 @@ BASE58_INVALID_PREFIX = '17VZNX1SN5NtKa8UQFxwQbFeFc3iqRYhem'
 
 INVALID_ADDRESS = 'asfah14i8fajz0123f'
 
-class InvalidAddressErrorMessageTest(BitcoinTestFramework):
+class InvalidAddressErrorMessageTest(FlocoinTestFramework):
     def set_test_params(self):
         self.setup_clean_chain = True
         self.num_nodes = 1

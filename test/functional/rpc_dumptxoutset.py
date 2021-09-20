@@ -6,14 +6,14 @@
 """
 
 from test_framework.blocktools import COINBASE_MATURITY
-from test_framework.test_framework import BitcoinTestFramework
+from test_framework.test_framework import FlocoinTestFramework
 from test_framework.util import assert_equal, assert_raises_rpc_error
 
 import hashlib
 from pathlib import Path
 
 
-class DumptxoutsetTest(BitcoinTestFramework):
+class DumptxoutsetTest(FlocoinTestFramework):
     def set_test_params(self):
         self.setup_clean_chain = True
         self.num_nodes = 1

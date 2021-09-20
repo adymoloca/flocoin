@@ -8,7 +8,7 @@ from decimal import Decimal
 from itertools import product
 
 from test_framework.blocktools import COINBASE_MATURITY
-from test_framework.test_framework import BitcoinTestFramework
+from test_framework.test_framework import FlocoinTestFramework
 from test_framework.util import (
     assert_array_result,
     assert_equal,
@@ -21,7 +21,7 @@ NOT_A_NUMBER_OR_STRING = "Amount is not a number or string"
 OUT_OF_RANGE = "Amount out of range"
 
 
-class WalletTest(BitcoinTestFramework):
+class WalletTest(FlocoinTestFramework):
     def set_test_params(self):
         self.num_nodes = 4
         self.extra_args = [[
@@ -163,7 +163,7 @@ class WalletTest(BitcoinTestFramework):
         self.nodes[1].generate(COINBASE_MATURITY)
         self.sync_all(self.nodes[0:3])
 
-        # node0 should end up with 100 btc in block rewards plus fees, but
+        # node0 should end up with 100 flo in block rewards plus fees, but
         # minus the 21 plus fees sent to node2
         assert_equal(self.nodes[0].getbalance(), 100 - 21)
         assert_equal(self.nodes[2].getbalance(), 21)
@@ -237,15 +237,15 @@ class WalletTest(BitcoinTestFramework):
 
         self.log.info("Test sendmany with fee_rate param (explicit fee rate in sat/vB)")
         fee_rate_sat_vb = 2
-        fee_rate_btc_kvb = fee_rate_sat_vb * 1e3 / 1e8
-        explicit_fee_rate_btc_kvb = Decimal(fee_rate_btc_kvb) / 1000
+        fee_rate_flo_kvb = fee_rate_sat_vb * 1e3 / 1e8
+        explicit_fee_rate_flo_kvb = Decimal(fee_rate_flo_kvb) / 1000
 
         # Test passing fee_rate as a string
         txid = self.nodes[2].sendmany(amounts={address: 10}, fee_rate=str(fee_rate_sat_vb))
         self.nodes[2].generate(1)
         self.sync_all(self.nodes[0:3])
         balance = self.nodes[2].getbalance()
-        node_2_bal = self.check_fee_amount(balance, node_2_bal - Decimal('10'), explicit_fee_rate_btc_kvb, self.get_vsize(self.nodes[2].gettransaction(txid)['hex']))
+        node_2_bal = self.check_fee_amount(balance, node_2_bal - Decimal('10'), explicit_fee_rate_flo_kvb, self.get_vsize(self.nodes[2].gettransaction(txid)['hex']))
         assert_equal(balance, node_2_bal)
         node_0_bal += Decimal('10')
         assert_equal(self.nodes[0].getbalance(), node_0_bal)
@@ -256,7 +256,7 @@ class WalletTest(BitcoinTestFramework):
         self.nodes[2].generate(1)
         self.sync_all(self.nodes[0:3])
         balance = self.nodes[2].getbalance()
-        node_2_bal = self.check_fee_amount(balance, node_2_bal - amount, explicit_fee_rate_btc_kvb, self.get_vsize(self.nodes[2].gettransaction(txid)['hex']))
+        node_2_bal = self.check_fee_amount(balance, node_2_bal - amount, explicit_fee_rate_flo_kvb, self.get_vsize(self.nodes[2].gettransaction(txid)['hex']))
         assert_equal(balance, node_2_bal)
         node_0_bal += amount
         assert_equal(self.nodes[0].getbalance(), node_0_bal)
@@ -291,7 +291,7 @@ class WalletTest(BitcoinTestFramework):
         for target, mode in product([-1, 0, 1009], ["economical", "conservative"]):
             assert_raises_rpc_error(-8, "Invalid conf_target, must be between 1 and 1008",  # max value of 1008 per src/policy/fees.h
                 self.nodes[2].sendmany, amounts={address: 1}, conf_target=target, estimate_mode=mode)
-        for target, mode in product([-1, 0], ["btc/kb", "sat/b"]):
+        for target, mode in product([-1, 0], ["flo/kb", "sat/b"]):
             assert_raises_rpc_error(-8, 'Invalid estimate_mode parameter, must be one of: "unset", "economical", "conservative"',
                 self.nodes[2].sendmany, amounts={address: 1}, conf_target=target, estimate_mode=mode)
 
@@ -406,14 +406,14 @@ class WalletTest(BitcoinTestFramework):
             # This will raise an exception for attempting to dump the private key of an address you do not own
             assert_raises_rpc_error(-3, "Address does not refer to a key", self.nodes[0].dumpprivkey, temp_address)
 
-            # This will raise an exception for attempting to get the private key of an invalid Bitcoin address
-            assert_raises_rpc_error(-5, "Invalid Bitcoin address", self.nodes[0].dumpprivkey, "invalid")
+            # This will raise an exception for attempting to get the private key of an invalid Flocoin address
+            assert_raises_rpc_error(-5, "Invalid Flocoin address", self.nodes[0].dumpprivkey, "invalid")
 
-            # This will raise an exception for attempting to set a label for an invalid Bitcoin address
-            assert_raises_rpc_error(-5, "Invalid Bitcoin address", self.nodes[0].setlabel, "invalid address", "label")
+            # This will raise an exception for attempting to set a label for an invalid Flocoin address
+            assert_raises_rpc_error(-5, "Invalid Flocoin address", self.nodes[0].setlabel, "invalid address", "label")
 
             # This will raise an exception for importing an invalid address
-            assert_raises_rpc_error(-5, "Invalid Bitcoin address or script", self.nodes[0].importaddress, "invalid")
+            assert_raises_rpc_error(-5, "Invalid Flocoin address or script", self.nodes[0].importaddress, "invalid")
 
             # This will raise an exception for attempting to import a pubkey that isn't in hex
             assert_raises_rpc_error(-5, "Pubkey must be a hex string", self.nodes[0].importpubkey, "not hex")
@@ -422,7 +422,7 @@ class WalletTest(BitcoinTestFramework):
             assert_raises_rpc_error(-5, "Pubkey is not a valid public key", self.nodes[0].importpubkey, "5361746f736869204e616b616d6f746f")
 
             # Bech32m addresses cannot be imported into a legacy wallet
-            assert_raises_rpc_error(-5, "Bech32m addresses cannot be imported into legacy wallets", self.nodes[0].importaddress, "flort1p0xlxvlhemja6c4dqv22uapctqupfhlxm9h8z3k2e72q4k9hcz7vqc8gma6")
+            assert_raises_rpc_error(-5, "Bech32m addresses cannot be imported into legacy wallets", self.nodes[0].importaddress, "bcrt1p0xlxvlhemja6c4dqv22uapctqupfhlxm9h8z3k2e72q4k9hcz7vqc8gma6")
 
             # Import address and private key to check correct behavior of spendable unspents
             # 1. Send some coins to generate new UTXO
@@ -437,7 +437,7 @@ class WalletTest(BitcoinTestFramework):
             address = self.nodes[1].getnewaddress()
             amount = 3
             fee_rate_sat_vb = 2
-            fee_rate_btc_kvb = fee_rate_sat_vb * 1e3 / 1e8
+            fee_rate_flo_kvb = fee_rate_sat_vb * 1e3 / 1e8
             # Test passing fee_rate as an integer
             txid = self.nodes[2].sendtoaddress(address=address, amount=amount, fee_rate=fee_rate_sat_vb)
             tx_size = self.get_vsize(self.nodes[2].gettransaction(txid)['hex'])
@@ -445,12 +445,12 @@ class WalletTest(BitcoinTestFramework):
             self.sync_all(self.nodes[0:3])
             postbalance = self.nodes[2].getbalance()
             fee = prebalance - postbalance - Decimal(amount)
-            assert_fee_amount(fee, tx_size, Decimal(fee_rate_btc_kvb))
+            assert_fee_amount(fee, tx_size, Decimal(fee_rate_flo_kvb))
 
             prebalance = self.nodes[2].getbalance()
             amount = Decimal("0.001")
             fee_rate_sat_vb = 1.23
-            fee_rate_btc_kvb = fee_rate_sat_vb * 1e3 / 1e8
+            fee_rate_flo_kvb = fee_rate_sat_vb * 1e3 / 1e8
             # Test passing fee_rate as a string
             txid = self.nodes[2].sendtoaddress(address=address, amount=amount, fee_rate=str(fee_rate_sat_vb))
             tx_size = self.get_vsize(self.nodes[2].gettransaction(txid)['hex'])
@@ -458,7 +458,7 @@ class WalletTest(BitcoinTestFramework):
             self.sync_all(self.nodes[0:3])
             postbalance = self.nodes[2].getbalance()
             fee = prebalance - postbalance - amount
-            assert_fee_amount(fee, tx_size, Decimal(fee_rate_btc_kvb))
+            assert_fee_amount(fee, tx_size, Decimal(fee_rate_flo_kvb))
 
             for key in ["totalFee", "feeRate"]:
                 assert_raises_rpc_error(-8, "Unknown named parameter key", self.nodes[2].sendtoaddress, address=address, amount=1, fee_rate=1, key=1)
@@ -490,7 +490,7 @@ class WalletTest(BitcoinTestFramework):
             for target, mode in product([-1, 0, 1009], ["economical", "conservative"]):
                 assert_raises_rpc_error(-8, "Invalid conf_target, must be between 1 and 1008",  # max value of 1008 per src/policy/fees.h
                     self.nodes[2].sendtoaddress, address=address, amount=1, conf_target=target, estimate_mode=mode)
-            for target, mode in product([-1, 0], ["btc/kb", "sat/b"]):
+            for target, mode in product([-1, 0], ["flo/kb", "sat/b"]):
                 assert_raises_rpc_error(-8, 'Invalid estimate_mode parameter, must be one of: "unset", "economical", "conservative"',
                     self.nodes[2].sendtoaddress, address=address, amount=1, conf_target=target, estimate_mode=mode)
 

@@ -1,5 +1,4 @@
 // Copyright (c) 2017-2021 The Bitcoin Core developers
-// Copyright (c) Flo Developers 2013-2021
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -155,12 +154,12 @@ std::string ShellQuoteIfNeeded(const std::string& s)
 
 std::string HelpExampleCli(const std::string& methodname, const std::string& args)
 {
-    return "> bitcoin-cli " + methodname + " " + args + "\n";
+    return "> flocoin-cli " + methodname + " " + args + "\n";
 }
 
 std::string HelpExampleCliNamed(const std::string& methodname, const RPCArgList& args)
 {
-    std::string result = "> bitcoin-cli -named " + methodname;
+    std::string result = "> flocoin-cli -named " + methodname;
     for (const auto& argpair: args) {
         const auto& value = argpair.second.isStr()
                 ? argpair.second.get_str()
@@ -299,6 +298,16 @@ public:
         obj.pushKV("iswitness", true);
         obj.pushKV("witness_version", 0);
         obj.pushKV("witness_program", HexStr(id));
+        return obj;
+    }
+
+    UniValue operator()(const WitnessV1Taproot& tap) const
+    {
+        UniValue obj(UniValue::VOBJ);
+        obj.pushKV("isscript", true);
+        obj.pushKV("iswitness", true);
+        obj.pushKV("witness_version", 1);
+        obj.pushKV("witness_program", HexStr(tap));
         return obj;
     }
 

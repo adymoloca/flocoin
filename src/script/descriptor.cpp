@@ -1,5 +1,4 @@
 // Copyright (c) 2018-2020 The Bitcoin Core developers
-// Copyright (c) Flo Developers 2013-2021
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -833,6 +832,58 @@ public:
     bool IsSingleType() const final { return true; }
 };
 
+/** A parsed tr(...) descriptor. */
+class TRDescriptor final : public DescriptorImpl
+{
+    std::vector<int> m_depths;
+protected:
+    std::vector<CScript> MakeScripts(const std::vector<CPubKey>& keys, Span<const CScript> scripts, FlatSigningProvider& out) const override
+    {
+        TaprootBuilder builder;
+        assert(m_depths.size() == scripts.size());
+        for (size_t pos = 0; pos < m_depths.size(); ++pos) {
+            builder.Add(m_depths[pos], scripts[pos], TAPROOT_LEAF_TAPSCRIPT);
+        }
+        if (!builder.IsComplete()) return {};
+        assert(keys.size() == 1);
+        XOnlyPubKey xpk(keys[0]);
+        if (!xpk.IsFullyValid()) return {};
+        builder.Finalize(xpk);
+        WitnessV1Taproot output = builder.GetOutput();
+        out.tr_spenddata[output].Merge(builder.GetSpendData());
+        return Vector(GetScriptForDestination(output));
+    }
+    bool ToStringSubScriptHelper(const SigningProvider* arg, std::string& ret, const StringType type, const DescriptorCache* cache = nullptr) const override
+    {
+        if (m_depths.empty()) return true;
+        std::vector<bool> path;
+        for (size_t pos = 0; pos < m_depths.size(); ++pos) {
+            if (pos) ret += ',';
+            while ((int)path.size() <= m_depths[pos]) {
+                if (path.size()) ret += '{';
+                path.push_back(false);
+            }
+            std::string tmp;
+            if (!m_subdescriptor_args[pos]->ToStringHelper(arg, tmp, type, cache)) return false;
+            ret += std::move(tmp);
+            while (!path.empty() && path.back()) {
+                if (path.size() > 1) ret += '}';
+                path.pop_back();
+            }
+            if (!path.empty()) path.back() = true;
+        }
+        return true;
+    }
+public:
+    TRDescriptor(std::unique_ptr<PubkeyProvider> internal_key, std::vector<std::unique_ptr<DescriptorImpl>> descs, std::vector<int> depths) :
+        DescriptorImpl(Vector(std::move(internal_key)), std::move(descs), "tr"), m_depths(std::move(depths))
+    {
+        assert(m_subdescriptor_args.size() == m_depths.size());
+    }
+    std::optional<OutputType> GetOutputType() const override { return OutputType::BECH32M; }
+    bool IsSingleType() const final { return true; }
+};
+
 ////////////////////////////////////////////////////////////////////////////
 // Parser                                                                 //
 ////////////////////////////////////////////////////////////////////////////
@@ -1090,6 +1141,67 @@ std::unique_ptr<DescriptorImpl> ParseScript(uint32_t& key_exp_index, Span<const 
         error = "Can only have addr() at top level";
         return nullptr;
     }
+    if (ctx == ParseScriptContext::TOP && Func("tr", expr)) {
+        auto arg = Expr(expr);
+        auto internal_key = ParsePubkey(key_exp_index, arg, ParseScriptContext::P2TR, out, error);
+        if (!internal_key) return nullptr;
+        ++key_exp_index;
+        std::vector<std::unique_ptr<DescriptorImpl>> subscripts; //!< list of script subexpressions
+        std::vector<int> depths; //!< depth in the tree of each subexpression (same length subscripts)
+        if (expr.size()) {
+            if (!Const(",", expr)) {
+                error = strprintf("tr: expected ',', got '%c'", expr[0]);
+                return nullptr;
+            }
+            /** The path from the top of the tree to what we're currently processing.
+             * branches[i] == false: left branch in the i'th step from the top; true: right branch.
+             */
+            std::vector<bool> branches;
+            // Loop over all provided scripts. In every iteration exactly one script will be processed.
+            // Use a do-loop because inside this if-branch we expect at least one script.
+            do {
+                // First process all open braces.
+                while (Const("{", expr)) {
+                    branches.push_back(false); // new left branch
+                    if (branches.size() > TAPROOT_CONTROL_MAX_NODE_COUNT) {
+                        error = strprintf("tr() supports at most %i nesting levels", TAPROOT_CONTROL_MAX_NODE_COUNT);
+                        return nullptr;
+                    }
+                }
+                // Process the actual script expression.
+                auto sarg = Expr(expr);
+                subscripts.emplace_back(ParseScript(key_exp_index, sarg, ParseScriptContext::P2TR, out, error));
+                if (!subscripts.back()) return nullptr;
+                depths.push_back(branches.size());
+                // Process closing braces; one is expected for every right branch we were in.
+                while (branches.size() && branches.back()) {
+                    if (!Const("}", expr)) {
+                        error = strprintf("tr(): expected '}' after script expression");
+                        return nullptr;
+                    }
+                    branches.pop_back(); // move up one level after encountering '}'
+                }
+                // If after that, we're at the end of a left branch, expect a comma.
+                if (branches.size() && !branches.back()) {
+                    if (!Const(",", expr)) {
+                        error = strprintf("tr(): expected ',' after script expression");
+                        return nullptr;
+                    }
+                    branches.back() = true; // And now we're in a right branch.
+                }
+            } while (branches.size());
+            // After we've explored a whole tree, we must be at the end of the expression.
+            if (expr.size()) {
+                error = strprintf("tr(): expected ')' after script expression");
+                return nullptr;
+            }
+        }
+        assert(TaprootBuilder::ValidDepths(depths));
+        return std::make_unique<TRDescriptor>(std::move(internal_key), std::move(subscripts), std::move(depths));
+    } else if (Func("tr", expr)) {
+        error = "Can only have tr at top level";
+        return nullptr;
+    }
     if (ctx == ParseScriptContext::TOP && Func("raw", expr)) {
         std::string str(expr.begin(), expr.end());
         if (!IsHex(str)) {
@@ -1198,6 +1310,40 @@ std::unique_ptr<DescriptorImpl> InferScript(const CScript& script, ParseScriptCo
         if (provider.GetCScript(scriptid, subscript)) {
             auto sub = InferScript(subscript, ParseScriptContext::P2WSH, provider);
             if (sub) return std::make_unique<WSHDescriptor>(std::move(sub));
+        }
+    }
+    if (txntype == TxoutType::WITNESS_V1_TAPROOT && ctx == ParseScriptContext::TOP) {
+        // Extract x-only pubkey from output.
+        XOnlyPubKey pubkey;
+        std::copy(data[0].begin(), data[0].end(), pubkey.begin());
+        // Request spending data.
+        TaprootSpendData tap;
+        if (provider.GetTaprootSpendData(pubkey, tap)) {
+            // If found, convert it back to tree form.
+            auto tree = InferTaprootTree(tap, pubkey);
+            if (tree) {
+                // If that works, try to infer subdescriptors for all leaves.
+                bool ok = true;
+                std::vector<std::unique_ptr<DescriptorImpl>> subscripts; //!< list of script subexpressions
+                std::vector<int> depths; //!< depth in the tree of each subexpression (same length subscripts)
+                for (const auto& [depth, script, leaf_ver] : *tree) {
+                    std::unique_ptr<DescriptorImpl> subdesc;
+                    if (leaf_ver == TAPROOT_LEAF_TAPSCRIPT) {
+                        subdesc = InferScript(script, ParseScriptContext::P2TR, provider);
+                    }
+                    if (!subdesc) {
+                        ok = false;
+                        break;
+                    } else {
+                        subscripts.push_back(std::move(subdesc));
+                        depths.push_back(depth);
+                    }
+                }
+                if (ok) {
+                    auto key = InferXOnlyPubkey(tap.internal_key, ParseScriptContext::P2TR, provider);
+                    return std::make_unique<TRDescriptor>(std::move(key), std::move(subscripts), std::move(depths));
+                }
+            }
         }
     }
 

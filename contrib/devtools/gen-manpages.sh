@@ -11,18 +11,18 @@ BUILDDIR=${BUILDDIR:-$TOPDIR}
 BINDIR=${BINDIR:-$BUILDDIR/src}
 MANDIR=${MANDIR:-$TOPDIR/doc/man}
 
-BITCOIND=${BITCOIND:-$BINDIR/bitcoind}
-BITCOINCLI=${BITCOINCLI:-$BINDIR/bitcoin-cli}
-BITCOINTX=${BITCOINTX:-$BINDIR/bitcoin-tx}
-WALLET_TOOL=${WALLET_TOOL:-$BINDIR/bitcoin-wallet}
-BITCOINUTIL=${BITCOINQT:-$BINDIR/bitcoin-util}
-BITCOINQT=${BITCOINQT:-$BINDIR/qt/bitcoin-qt}
+FLOCOIND=${FLOCOIND:-$BINDIR/flocoind}
+FLOCOINCLI=${FLOCOINCLI:-$BINDIR/flocoin-cli}
+FLOCOINTX=${FLOCOINTX:-$BINDIR/flocoin-tx}
+WALLET_TOOL=${WALLET_TOOL:-$BINDIR/flocoin-wallet}
+FLOCOINUTIL=${FLOCOINQT:-$BINDIR/flocoin-util}
+FLOCOINQT=${FLOCOINQT:-$BINDIR/qt/flocoin-qt}
 
-[ ! -x $BITCOIND ] && echo "$BITCOIND not found or not executable." && exit 1
+[ ! -x $FLOCOIND ] && echo "$FLOCOIND not found or not executable." && exit 1
 
 # Don't allow man pages to be generated for binaries built from a dirty tree
 DIRTY=""
-for cmd in $BITCOIND $BITCOINCLI $BITCOINTX $WALLET_TOOL $BITCOINUTIL $BITCOINQT; do
+for cmd in $FLOCOIND $FLOCOINCLI $FLOCOINTX $WALLET_TOOL $FLOCOINUTIL $FLOCOINQT; do
   VERSION_OUTPUT=$($cmd --version)
   if [[ $VERSION_OUTPUT == *"dirty"* ]]; then
     DIRTY="${DIRTY}${cmd}\n"
@@ -37,15 +37,15 @@ then
 fi
 
 # The autodetected version git tag can screw up manpage output a little bit
-read -r -a FLOVER <<< "$($BITCOINCLI --version | head -n1 | awk -F'[ -]' '{ print $6, $7 }')"
+read -r -a FLOVER <<< "$($FLOCOINCLI --version | head -n1 | awk -F'[ -]' '{ print $6, $7 }')"
 
 # Create a footer file with copyright content.
-# This gets autodetected fine for bitcoind if --version-string is not set,
-# but has different outcomes for bitcoin-qt and bitcoin-cli.
+# This gets autodetected fine for flocoind if --version-string is not set,
+# but has different outcomes for flocoin-qt and flocoin-cli.
 echo "[COPYRIGHT]" > footer.h2m
-$BITCOIND --version | sed -n '1!p' >> footer.h2m
+$FLOCOIND --version | sed -n '1!p' >> footer.h2m
 
-for cmd in $BITCOIND $BITCOINCLI $BITCOINTX $WALLET_TOOL $BITCOINUTIL $BITCOINQT; do
+for cmd in $FLOCOIND $FLOCOINCLI $FLOCOINTX $WALLET_TOOL $FLOCOINUTIL $FLOCOINQT; do
   cmdname="${cmd##*/}"
   help2man -N --version-string=${FLOVER[0]} --include=footer.h2m -o ${MANDIR}/${cmdname}.1 ${cmd}
   sed -i "s/\\\-${FLOVER[1]}//g" ${MANDIR}/${cmdname}.1

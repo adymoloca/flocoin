@@ -1,38 +1,38 @@
-Bitcoin Core integration/staging tree
+Flocoin Core integration/staging tree
 =====================================
 
-https://bitcoincore.org
+https://flocoincore.org
 
-For an immediately usable, binary version of the Bitcoin Core software, see
-https://bitcoincore.org/en/download/.
+For an immediately usable, binary version of the Flocoin Core software, see
+https://flocoincore.org/en/download/.
 
-Further information about Bitcoin Core is available in the [doc folder](/doc).
+Further information about Flocoin Core is available in the [doc folder](/doc).
 
-What is Bitcoin?
+What is Flocoin?
 ----------------
 
-Bitcoin is an experimental digital currency that enables instant payments to
-anyone, anywhere in the world. Bitcoin uses peer-to-peer technology to operate
+Flocoin is an experimental digital currency that enables instant payments to
+anyone, anywhere in the world. Flocoin uses peer-to-peer technology to operate
 with no central authority: managing transactions and issuing money are carried
-out collectively by the network. Bitcoin Core is the name of open source
+out collectively by the network. Flocoin Core is the name of open source
 software which enables the use of this currency.
 
-For more information read the original Bitcoin whitepaper.
+For more information read the original Flocoin whitepaper.
 
 License
 -------
 
-Bitcoin Core is released under the terms of the MIT license. See [COPYING](COPYING) for more
+Flocoin Core is released under the terms of the MIT license. See [COPYING](COPYING) for more
 information or see https://opensource.org/licenses/MIT.
 
 Development Process
 -------------------
 
 The `master` branch is regularly built (see `doc/build-*.md` for instructions) and tested, but it is not guaranteed to be
-completely stable. [Tags](https://github.com/bitcoin/bitcoin/tags) are created
-regularly from release branches to indicate new official, stable release versions of Bitcoin Core.
+completely stable. [Tags](https://github.com/flocoin/flocoin/tags) are created
+regularly from release branches to indicate new official, stable release versions of Flocoin Core.
 
-The https://github.com/bitcoin-core/gui repository is used exclusively for the
+The https://github.com/flocoin-core/gui repository is used exclusively for the
 development of the GUI. Its master branch is identical in all monotree
 repositories. Release branches and tags do not exist, so please do not fork
 that repository unless it is for development reasons.
@@ -73,7 +73,7 @@ Translations
 ------------
 
 Changes to translations as well as new translations can be submitted to
-[Bitcoin Core's Transifex page](https://www.transifex.com/bitcoin/bitcoin/).
+[Flocoin Core's Transifex page](https://www.transifex.com/flocoin/flocoin/).
 
 Translations are periodically pulled from Transifex and merged into the git repository. See the
 [translation process](doc/translation_process.md) for details on how this works.

@@ -9,6 +9,7 @@
 #include <secp256k1.h>
 #include <secp256k1_extrakeys.h>
 #include <secp256k1_recovery.h>
+#include <secp256k1_schnorrsig.h>
 #include <span.h>
 #include <uint256.h>
 
@@ -27,7 +28,7 @@ secp256k1_context* secp256k1_context_verify = nullptr;
  *
  *  Supported violations include negative integers, excessive padding, garbage
  *  at the end, and overly long length descriptors. This is safe to use in
- *  Bitcoin because since the activation of BIP66, signatures are verified to be
+ *  Flocoin because since the activation of BIP66, signatures are verified to be
  *  strict DER before being passed to this module, and we know it supports all
  *  violations present in the blockchain before that point.
  */
@@ -185,6 +186,14 @@ bool XOnlyPubKey::IsFullyValid() const
     return secp256k1_xonly_pubkey_parse(secp256k1_context_verify, &pubkey, m_keydata.data());
 }
 
+bool XOnlyPubKey::VerifySchnorr(const uint256& msg, Span<const unsigned char> sigbytes) const
+{
+    assert(sigbytes.size() == 64);
+    secp256k1_xonly_pubkey pubkey;
+    if (!secp256k1_xonly_pubkey_parse(secp256k1_context_verify, &pubkey, m_keydata.data())) return false;
+    return secp256k1_schnorrsig_verify(secp256k1_context_verify, sigbytes.data(), msg.begin(), &pubkey);
+}
+
 static const CHashWriter HASHER_TAPTWEAK = TaggedHash("TapTweak");
 
 uint256 XOnlyPubKey::ComputeTapTweakHash(const uint256* merkle_root) const
@@ -237,7 +246,7 @@ bool CPubKey::Verify(const uint256 &hash, const std::vector<unsigned char>& vchS
         return false;
     }
     /* libsecp256k1's ECDSA verification requires lower-S signatures, which have
-     * not historically been enforced in Bitcoin, so normalize them first. */
+     * not historically been enforced in Flocoin, so normalize them first. */
     secp256k1_ecdsa_signature_normalize(secp256k1_context_verify, &sig, &sig);
     return secp256k1_ecdsa_verify(secp256k1_context_verify, &sig, hash.begin(), &pubkey);
 }

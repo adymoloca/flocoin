@@ -3,8 +3,8 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#ifndef BITCOIN_TXMEMPOOL_H
-#define BITCOIN_TXMEMPOOL_H
+#ifndef FLOCOIN_TXMEMPOOL_H
+#define FLOCOIN_TXMEMPOOL_H
 
 #include <atomic>
 #include <map>
@@ -970,4 +970,4 @@ struct DisconnectedBlockTransactions {
     }
 };
 
-#endif // BITCOIN_TXMEMPOOL_H
+#endif // FLOCOIN_TXMEMPOOL_H

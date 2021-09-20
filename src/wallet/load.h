@@ -3,8 +3,8 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#ifndef BITCOIN_WALLET_LOAD_H
-#define BITCOIN_WALLET_LOAD_H
+#ifndef FLOCOIN_WALLET_LOAD_H
+#define FLOCOIN_WALLET_LOAD_H
 
 #include <string>
 #include <vector>
@@ -34,4 +34,4 @@ void StopWallets();
 //! Close all wallets.
 void UnloadWallets();
 
-#endif // BITCOIN_WALLET_LOAD_H
+#endif // FLOCOIN_WALLET_LOAD_H

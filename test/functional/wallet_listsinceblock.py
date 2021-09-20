@@ -8,7 +8,7 @@
 from test_framework.address import key_to_p2wpkh
 from test_framework.blocktools import COINBASE_MATURITY
 from test_framework.key import ECKey
-from test_framework.test_framework import BitcoinTestFramework
+from test_framework.test_framework import FlocoinTestFramework
 from test_framework.messages import BIP125_SEQUENCE_NUMBER
 from test_framework.util import (
     assert_array_result,
@@ -19,7 +19,7 @@ from test_framework.wallet_util import bytes_to_wif
 
 from decimal import Decimal
 
-class ListSinceBlockTest(BitcoinTestFramework):
+class ListSinceBlockTest(FlocoinTestFramework):
     def set_test_params(self):
         self.num_nodes = 4
         self.setup_clean_chain = True

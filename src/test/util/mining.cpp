@@ -37,8 +37,8 @@ std::vector<std::shared_ptr<CBlock>> CreateBlockChain(size_t total_height, const
         coinbase_tx.vin[0].prevout.SetNull();
         coinbase_tx.vout.resize(1);
         coinbase_tx.vout[0].scriptPubKey = P2WSH_OP_TRUE;
-        coinbase_tx.vout[0].nValue = GetBlockSubsidy(height + 1, params.GetConsensus());
-        coinbase_tx.vin[0].scriptSig = CScript() << (height + 1) << OP_0;
+        coinbase_tx.vout[0].nValue = GetBlockSubsidy(height, params.GetConsensus());
+        coinbase_tx.vin[0].scriptSig = CScript() << (height) << OP_0;
         block.vtx = {MakeTransactionRef(std::move(coinbase_tx))};
 
         block.nVersion = VERSIONBITS_LAST_OLD_BLOCK_VERSION;

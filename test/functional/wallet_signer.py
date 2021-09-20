@@ -1,24 +1,23 @@
 #!/usr/bin/env python3
 # Copyright (c) 2017-2018 The Bitcoin Core developers
-# Copyright (c) Flo Developers 2013-2021
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 """Test external signer.
 
-Verify that a bitcoind node can use an external signer command
+Verify that a flocoind node can use an external signer command
 See also rpc_signer.py for tests without wallet context.
 """
 import os
 import platform
 
-from test_framework.test_framework import BitcoinTestFramework
+from test_framework.test_framework import FlocoinTestFramework
 from test_framework.util import (
     assert_equal,
     assert_raises_rpc_error,
 )
 
 
-class WalletSignerTest(BitcoinTestFramework):
+class WalletSignerTest(FlocoinTestFramework):
     def mock_signer_path(self):
         path = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'mocks', 'signer.py')
         if platform.system() == "Windows":
@@ -76,7 +75,7 @@ class WalletSignerTest(BitcoinTestFramework):
         assert_equal(hww.getwalletinfo()["keypoolsize"], 30)
 
         address1 = hww.getnewaddress(address_type="bech32")
-        assert_equal(address1, "flort1qm90ugl4d48jv8n6e5t9ln6t9zlpm5th68x4f8g")
+        assert_equal(address1, "bcrt1qm90ugl4d48jv8n6e5t9ln6t9zlpm5th68x4f8g")
         address_info = hww.getaddressinfo(address1)
         assert_equal(address_info['solvable'], True)
         assert_equal(address_info['ismine'], True)

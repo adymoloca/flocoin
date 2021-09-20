@@ -1,5 +1,4 @@
 // Copyright (c) 2014-2019 The Bitcoin Core developers
-// Copyright (c) Flo Developers 2013-2021
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -55,6 +54,14 @@ public:
         return bech32::Encode(bech32::Encoding::BECH32, m_params.Bech32HRP(), data);
     }
 
+    std::string operator()(const WitnessV1Taproot& tap) const
+    {
+        std::vector<unsigned char> data = {1};
+        data.reserve(53);
+        ConvertBits<8, 5, true>([&](unsigned char c) { data.push_back(c); }, tap.begin(), tap.end());
+        return bech32::Encode(bech32::Encoding::BECH32M, m_params.Bech32HRP(), data);
+    }
+
     std::string operator()(const WitnessUnknown& id) const
     {
         if (id.version < 1 || id.version > 16 || id.length < 2 || id.length > 40) {
@@ -75,7 +82,7 @@ CTxDestination DecodeDestination(const std::string& str, const CChainParams& par
     uint160 hash;
     error_str = "";
     if (DecodeBase58Check(str, data, 21)) {
-        // base58-encoded Bitcoin addresses.
+        // base58-encoded Flocoin addresses.
         // Public-key-hash-addresses have version 0 (or 111 testnet).
         // The data vector contains RIPEMD160(SHA256(pubkey)), where pubkey is the serialized public key.
         const std::vector<unsigned char>& pubkey_prefix = params.Base58Prefix(CChainParams::PUBKEY_ADDRESS);
@@ -100,6 +107,10 @@ CTxDestination DecodeDestination(const std::string& str, const CChainParams& par
     if ((dec.encoding == bech32::Encoding::BECH32 || dec.encoding == bech32::Encoding::BECH32M) && dec.data.size() > 0) {
         // Bech32 decoding
         error_str = "";
+        if (dec.hrp != params.Bech32HRP()) {
+            error_str = "Invalid prefix for Bech32 address";
+            return CNoDestination();
+        }
         int version = dec.data[0]; // The first 5 bit symbol is the witness version (0-16)
         if (version == 0 && dec.encoding != bech32::Encoding::BECH32) {
             error_str = "Version 0 witness address must use Bech32 checksum";
@@ -130,6 +141,13 @@ CTxDestination DecodeDestination(const std::string& str, const CChainParams& par
 
                 error_str = "Invalid Bech32 v0 address data size";
                 return CNoDestination();
+            }
+
+            if (version == 1 && data.size() == WITNESS_V1_TAPROOT_SIZE) {
+                static_assert(WITNESS_V1_TAPROOT_SIZE == WitnessV1Taproot::size());
+                WitnessV1Taproot tap;
+                std::copy(data.begin(), data.end(), tap.begin());
+                return tap;
             }
 
             if (version > 16) {

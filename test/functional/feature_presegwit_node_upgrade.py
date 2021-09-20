@@ -4,13 +4,13 @@
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 """Test a pre-segwit node upgrading to segwit consensus"""
 
-from test_framework.test_framework import BitcoinTestFramework
+from test_framework.test_framework import FlocoinTestFramework
 from test_framework.util import (
     assert_equal,
     softfork_active,
 )
 
-class SegwitUpgradeTest(BitcoinTestFramework):
+class SegwitUpgradeTest(FlocoinTestFramework):
     def set_test_params(self):
         self.setup_clean_chain = True
         self.num_nodes = 1

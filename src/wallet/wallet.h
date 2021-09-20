@@ -4,8 +4,8 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#ifndef BITCOIN_WALLET_WALLET_H
-#define BITCOIN_WALLET_WALLET_H
+#ifndef FLOCOIN_WALLET_WALLET_H
+#define FLOCOIN_WALLET_WALLET_H
 
 #include <amount.h>
 #include <interfaces/chain.h>
@@ -328,7 +328,7 @@ private:
     // ScriptPubKeyMan::GetID. In many cases it will be the hash of an internal structure
     std::map<uint256, std::unique_ptr<ScriptPubKeyMan>> m_spk_managers;
 
-    bool CreateTransactionInternal(const std::vector<CRecipient>& vecSend, CTransactionRef& tx, CAmount& nFeeRet, int& nChangePosInOut, bilingual_str& error, const CCoinControl& coin_control, FeeCalculation& fee_calc_out, std::string strFloData = "", bool sign) EXCLUSIVE_LOCKS_REQUIRED(cs_wallet);
+    bool CreateTransactionInternal(const std::vector<CRecipient>& vecSend, CTransactionRef& tx, CAmount& nFeeRet, int& nChangePosInOut, bilingual_str& error, const CCoinControl& coin_control, FeeCalculation& fee_calc_out, std::string strFloData, bool sign) EXCLUSIVE_LOCKS_REQUIRED(cs_wallet);
 
     /**
      * Catch wallet up to current chain, scanning new blocks, updating the best
@@ -592,7 +592,7 @@ public:
      * selected by SelectCoins(); Also create the change output, when needed
      * @note passing nChangePosInOut as -1 will result in setting a random position
      */
-    bool CreateTransaction(const std::vector<CRecipient>& vecSend, CTransactionRef& tx, CAmount& nFeeRet, int& nChangePosInOut, bilingual_str& error, const CCoinControl& coin_control, FeeCalculation& fee_calc_out, bool sign = true);
+    bool CreateTransaction(const std::vector<CRecipient>& vecSend, CTransactionRef& tx, CAmount& nFeeRet, int& nChangePosInOut, bilingual_str& error, const CCoinControl& coin_control, FeeCalculation& fee_calc_out, std::string strFloData = "", bool sign = true);
     /**
      * Submit the transaction to the node's mempool and then relay to peers.
      * Should be called after CreateTransaction unless you want to abort
@@ -974,4 +974,4 @@ bool AddWalletSetting(interfaces::Chain& chain, const std::string& wallet_name);
 //! Remove wallet name from persistent configuration so it will not be loaded on startup.
 bool RemoveWalletSetting(interfaces::Chain& chain, const std::string& wallet_name);
 
-#endif // BITCOIN_WALLET_WALLET_H
+#endif // FLOCOIN_WALLET_WALLET_H

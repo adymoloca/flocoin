@@ -1,5 +1,4 @@
 // Copyright (c) 2009-2020 The Bitcoin Core developers
-// Copyright (c) Flo Developers 2013-2021
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -31,6 +30,11 @@ public:
     }
 
     bool CheckECDSASignature(const std::vector<unsigned char>& scriptSig, const std::vector<unsigned char>& vchPubKey, const CScript& scriptCode, SigVersion sigversion) const override
+    {
+        return m_fuzzed_data_provider.ConsumeBool();
+    }
+
+    bool CheckSchnorrSignature(Span<const unsigned char> sig, Span<const unsigned char> pubkey, SigVersion sigversion, const ScriptExecutionData& execdata, ScriptError* serror = nullptr) const override
     {
         return m_fuzzed_data_provider.ConsumeBool();
     }

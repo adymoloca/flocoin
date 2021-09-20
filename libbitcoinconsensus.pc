@@ -1,0 +1,11 @@
+prefix=/usr/local
+exec_prefix=${prefix}
+libdir=${exec_prefix}/lib
+includedir=${prefix}/include
+
+Name: Flocoin Core consensus library
+Description: Library for the Flocoin consensus protocol.
+Version: 22.99.0
+Libs: -L${libdir} -lflocoinconsensus
+Cflags: -I${includedir}
+Requires.private: libcrypto

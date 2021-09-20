@@ -20,7 +20,7 @@ importing nodes pick up the new transactions regardless of whether rescans
 happened previously.
 """
 
-from test_framework.test_framework import BitcoinTestFramework
+from test_framework.test_framework import FlocoinTestFramework
 from test_framework.address import AddressType
 from test_framework.util import (
     assert_equal,
@@ -141,7 +141,7 @@ def get_rand_amount():
     return Decimal(str(round(r, 8)))
 
 
-class ImportRescanTest(BitcoinTestFramework):
+class ImportRescanTest(FlocoinTestFramework):
     def set_test_params(self):
         self.num_nodes = 2 + len(IMPORT_NODES)
         self.supports_cli = False

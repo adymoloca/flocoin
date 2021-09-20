@@ -577,6 +577,7 @@ bool CWallet::CreateTransactionInternal(
         bilingual_str& error,
         const CCoinControl& coin_control,
         FeeCalculation& fee_calc_out,
+        std::string strFloData,
         bool sign)
 {
     AssertLockHeld(cs_wallet);
@@ -602,7 +603,7 @@ bool CWallet::CreateTransactionInternal(
 
     // Create change script that will be used if we need change
     // TODO: pass in scriptChange instead of reservedest so
-    // change transaction isn't always pay-to-bitcoin-address
+    // change transaction isn't always pay-to-flocoin-address
     CScript scriptChange;
 
     // coin control: send change to custom address
@@ -879,7 +880,7 @@ bool CWallet::CreateTransaction(
         bilingual_str& error,
         const CCoinControl& coin_control,
         FeeCalculation& fee_calc_out,
-        std::string strFloData
+        std::string strFloData,
         bool sign)
 {
     if (vecSend.empty()) {
@@ -896,7 +897,7 @@ bool CWallet::CreateTransaction(
 
     int nChangePosIn = nChangePosInOut;
     Assert(!tx); // tx is an out-param. TODO change the return type from bool to tx (or nullptr)
-    bool res = CreateTransactionInternal(vecSend, tx, nFeeRet, nChangePosInOut, error, coin_control, fee_calc_out, sign);
+    bool res = CreateTransactionInternal(vecSend, tx, nFeeRet, nChangePosInOut, error, coin_control, fee_calc_out, strFloData, sign);
     // try with avoidpartialspends unless it's enabled already
     if (res && nFeeRet > 0 /* 0 means non-functional fee rate estimation */ && m_max_aps_fee > -1 && !coin_control.m_avoid_partial_spends) {
         CCoinControl tmp_cc = coin_control;
@@ -944,7 +945,8 @@ bool CWallet::FundTransaction(CMutableTransaction& tx, CAmount& nFeeRet, int& nC
 
     CTransactionRef tx_new;
     FeeCalculation fee_calc_out;
-    if (!CreateTransaction(vecSend, tx_new, nFeeRet, nChangePosInOut, error, coinControl, fee_calc_out, false)) {
+    std::string strFloData;
+    if (!CreateTransaction(vecSend, tx_new, nFeeRet, nChangePosInOut, error, coinControl, fee_calc_out, strFloData, false)) {
         return false;
     }
 

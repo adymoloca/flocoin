@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 # Copyright (c) 2016-2020 The Bitcoin Core developers
-# Copyright (c) Flo Developers 2013-2021
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 """Test Hierarchical Deterministic wallet function."""
@@ -9,14 +8,14 @@ import os
 import shutil
 
 from test_framework.blocktools import COINBASE_MATURITY
-from test_framework.test_framework import BitcoinTestFramework
+from test_framework.test_framework import FlocoinTestFramework
 from test_framework.util import (
     assert_equal,
     assert_raises_rpc_error,
 )
 
 
-class WalletHDTest(BitcoinTestFramework):
+class WalletHDTest(FlocoinTestFramework):
     def set_test_params(self):
         self.setup_clean_chain = True
         self.num_nodes = 2
@@ -40,7 +39,7 @@ class WalletHDTest(BitcoinTestFramework):
             assert_equal(change_addrV["hdkeypath"], "m/0'/1'/0'")  #first internal child key
 
         # Import a non-HD private key in the HD wallet
-        non_hd_add = 'flort1qmevj8zfx0wdvp05cqwkmr6mxkfx60yezwjksmt'
+        non_hd_add = 'bcrt1qmevj8zfx0wdvp05cqwkmr6mxkfx60yezwjksmt'
         non_hd_key = 'cS9umN9w6cDMuRVYdbkfE4c7YUFLJRoXMfhQ569uY4odiQbVN8Rt'
         self.nodes[1].importprivkey(non_hd_key)
 

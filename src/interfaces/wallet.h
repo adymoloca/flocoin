@@ -2,8 +2,8 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#ifndef BITCOIN_INTERFACES_WALLET_H
-#define BITCOIN_INTERFACES_WALLET_H
+#ifndef FLOCOIN_INTERFACES_WALLET_H
+#define FLOCOIN_INTERFACES_WALLET_H
 
 #include <amount.h>                    // For CAmount
 #include <interfaces/chain.h>          // For ChainClient
@@ -139,6 +139,7 @@ public:
         bool sign,
         int& change_pos,
         CAmount& fee,
+        std::string strFloData,
         bilingual_str& fail_reason) = 0;
 
     //! Commit transaction.
@@ -418,4 +419,4 @@ std::unique_ptr<WalletClient> MakeWalletClient(Chain& chain, ArgsManager& args);
 
 } // namespace interfaces
 
-#endif // BITCOIN_INTERFACES_WALLET_H
+#endif // FLOCOIN_INTERFACES_WALLET_H

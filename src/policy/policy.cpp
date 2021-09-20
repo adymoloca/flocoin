@@ -1,6 +1,5 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
 // Copyright (c) 2009-2020 The Bitcoin Core developers
-// Copyright (c) Flo Developers 2013-2021
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -157,7 +156,7 @@ bool IsStandardTx(const CTransaction& tx, bool permit_bare_multisig, const CFeeR
  *
  * Note that only the non-witness portion of the transaction is checked here.
  */
-bool AreInputsStandard(const CTransaction& tx, const CCoinsViewCache& mapInputs)
+bool AreInputsStandard(const CTransaction& tx, const CCoinsViewCache& mapInputs, bool taproot_active)
 {
     if (tx.IsCoinBase())
         return true; // Coinbases don't use vin normally
@@ -185,6 +184,9 @@ bool AreInputsStandard(const CTransaction& tx, const CCoinsViewCache& mapInputs)
             if (subscript.GetSigOpCount(true) > MAX_P2SH_SIGOPS) {
                 return false;
             }
+        } else if (whichType == TxoutType::WITNESS_V1_TAPROOT) {
+            // Don't allow Taproot spends unless Taproot is active.
+            if (!taproot_active) return false;
         }
     }
 
@@ -239,6 +241,36 @@ bool IsWitnessStandard(const CTransaction& tx, const CCoinsViewCache& mapInputs)
             for (unsigned int j = 0; j < sizeWitnessStack; j++) {
                 if (tx.vin[i].scriptWitness.stack[j].size() > MAX_STANDARD_P2WSH_STACK_ITEM_SIZE)
                     return false;
+            }
+        }
+
+        // Check policy limits for Taproot spends:
+        // - MAX_STANDARD_TAPSCRIPT_STACK_ITEM_SIZE limit for stack item size
+        // - No annexes
+        if (witnessversion == 1 && witnessprogram.size() == WITNESS_V1_TAPROOT_SIZE && !p2sh) {
+            // Taproot spend (non-P2SH-wrapped, version 1, witness program size 32; see BIP 341)
+            auto stack = MakeSpan(tx.vin[i].scriptWitness.stack);
+            if (stack.size() >= 2 && !stack.back().empty() && stack.back()[0] == ANNEX_TAG) {
+                // Annexes are nonstandard as long as no semantics are defined for them.
+                return false;
+            }
+            if (stack.size() >= 2) {
+                // Script path spend (2 or more stack elements after removing optional annex)
+                const auto& control_block = SpanPopBack(stack);
+                SpanPopBack(stack); // Ignore script
+                if (control_block.empty()) return false; // Empty control block is invalid
+                if ((control_block[0] & TAPROOT_LEAF_MASK) == TAPROOT_LEAF_TAPSCRIPT) {
+                    // Leaf version 0xc0 (aka Tapscript, see BIP 342)
+                    for (const auto& item : stack) {
+                        if (item.size() > MAX_STANDARD_TAPSCRIPT_STACK_ITEM_SIZE) return false;
+                    }
+                }
+            } else if (stack.size() == 1) {
+                // Key path spend (1 stack element after removing optional annex)
+                // (no policy rules apply)
+            } else {
+                // 0 stack elements; this is already invalid by consensus rules
+                return false;
             }
         }
     }

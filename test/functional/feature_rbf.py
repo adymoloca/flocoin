@@ -17,7 +17,7 @@ from test_framework.messages import (
     CTxOut,
 )
 from test_framework.script import CScript, OP_DROP
-from test_framework.test_framework import BitcoinTestFramework
+from test_framework.test_framework import FlocoinTestFramework
 from test_framework.util import assert_equal, assert_raises_rpc_error, satoshi_round
 from test_framework.script_util import DUMMY_P2WPKH_SCRIPT, DUMMY_2_P2WPKH_SCRIPT
 from test_framework.wallet import MiniWallet
@@ -66,7 +66,7 @@ def make_utxo(node, amount, confirmed=True, scriptPubKey=DUMMY_P2WPKH_SCRIPT):
     return COutPoint(int(txid, 16), 0)
 
 
-class ReplaceByFeeTest(BitcoinTestFramework):
+class ReplaceByFeeTest(FlocoinTestFramework):
     def set_test_params(self):
         self.num_nodes = 1
         self.extra_args = [

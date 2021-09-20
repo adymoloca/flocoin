@@ -2,8 +2,8 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#ifndef BITCOIN_UTIL_UI_CHANGE_TYPE_H
-#define BITCOIN_UTIL_UI_CHANGE_TYPE_H
+#ifndef FLOCOIN_UTIL_UI_CHANGE_TYPE_H
+#define FLOCOIN_UTIL_UI_CHANGE_TYPE_H
 
 /** General change type (added, updated, removed). */
 enum ChangeType {
@@ -12,4 +12,4 @@ enum ChangeType {
     CT_DELETED
 };
 
-#endif // BITCOIN_UTIL_UI_CHANGE_TYPE_H
+#endif // FLOCOIN_UTIL_UI_CHANGE_TYPE_H

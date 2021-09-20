@@ -1,5 +1,4 @@
 // Copyright (c) 2019 The Bitcoin Core developers
-// Copyright (c) Flo Developers 2013-2021
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -12,7 +11,7 @@
 #include <wallet/wallet.h>
 #endif
 
-const std::string ADDRESS_BCRT1_UNSPENDABLE = "flort1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq3xueyj";
+const std::string ADDRESS_BCRT1_UNSPENDABLE = "bcrt1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq3xueyj";
 
 #ifdef ENABLE_WALLET
 std::string getnewaddress(CWallet& w)

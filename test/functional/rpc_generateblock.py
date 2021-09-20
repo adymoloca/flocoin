@@ -1,19 +1,18 @@
 #!/usr/bin/env python3
 # Copyright (c) 2020 The Bitcoin Core developers
-# Copyright (c) Flo Developers 2013-2021
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 '''Test generateblock rpc.
 '''
 
-from test_framework.test_framework import BitcoinTestFramework
+from test_framework.test_framework import FlocoinTestFramework
 from test_framework.util import (
     assert_equal,
     assert_raises_rpc_error,
 )
 
 
-class GenerateBlockTest(BitcoinTestFramework):
+class GenerateBlockTest(FlocoinTestFramework):
     def set_test_params(self):
         self.num_nodes = 1
 
@@ -38,7 +37,7 @@ class GenerateBlockTest(BitcoinTestFramework):
 
         self.log.info('Generate an empty block to a combo descriptor with compressed pubkey')
         combo_key = '0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798'
-        combo_address = 'flort1qw508d6qejxtdg4y5r3zarvary0c5xw7kygt080'
+        combo_address = 'bcrt1qw508d6qejxtdg4y5r3zarvary0c5xw7kygt080'
         hash = node.generateblock('combo(' + combo_key + ')', [])['hash']
         block = node.getblock(hash, 2)
         assert_equal(len(block['tx']), 1)

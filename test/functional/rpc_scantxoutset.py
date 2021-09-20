@@ -4,7 +4,7 @@
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 """Test the scantxoutset rpc call."""
-from test_framework.test_framework import BitcoinTestFramework
+from test_framework.test_framework import FlocoinTestFramework
 from test_framework.util import assert_equal, assert_raises_rpc_error
 
 from decimal import Decimal
@@ -14,7 +14,7 @@ import os
 def descriptors(out):
     return sorted(u['desc'] for u in out['unspents'])
 
-class ScantxoutsetTest(BitcoinTestFramework):
+class ScantxoutsetTest(FlocoinTestFramework):
     def set_test_params(self):
         self.num_nodes = 1
         self.setup_clean_chain = True

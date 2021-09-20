@@ -9,7 +9,7 @@
 
 /**
  * Name of client reported in the 'version' message. Report the same name
- * for both bitcoind and bitcoin-qt, to make it harder for attackers to
+ * for both flocoind and flocoin-qt, to make it harder for attackers to
  * target servers or GUI users specifically.
  */
 const std::string CLIENT_NAME("Satoshi");
@@ -24,8 +24,7 @@ const std::string CLIENT_NAME("Satoshi");
 //   - "// No build information available", if proper git information is not available
 #endif
 
-//! git will put "#define GIT_COMMIT_ID ..." on the next line inside archives. 
-#define GIT_COMMIT_ID "2f004bdf52353be7b24842b03e299086d869168b"
+//! git will put "#define GIT_COMMIT_ID ..." on the next line inside archives. $Format:%n#define GIT_COMMIT_ID "%H"$
 
 #ifdef BUILD_GIT_TAG
     #define BUILD_DESC BUILD_GIT_TAG
@@ -54,7 +53,7 @@ std::string FormatFullVersion()
 }
 
 /**
- * Format the subversion field according to BIP 14 spec (https://github.com/bitcoin/bips/blob/master/bip-0014.mediawiki)
+ * Format the subversion field according to BIP 14 spec (https://github.com/flocoin/bips/blob/master/bip-0014.mediawiki)
  */
 std::string FormatSubVersion(const std::string& name, int nClientVersion, const std::vector<std::string>& comments)
 {

@@ -9,6 +9,7 @@
 #include <chainparamsseeds.h>
 #include <consensus/merkle.h>
 #include <deploymentinfo.h>
+#include <hash.h> // for signet block challenge hash
 #include <util/system.h>
 
 #include <assert.h>
@@ -16,16 +17,17 @@
 #include <boost/algorithm/string/classification.hpp>
 #include <boost/algorithm/string/split.hpp>
 
-static CBlock CreateGenesisBlock(const char* pszTimestamp, const std::string strFloData,const CScript& genesisOutputScript, uint32_t nTime, uint32_t nNonce, uint32_t nBits, int32_t nVersion, const CAmount& genesisReward)
+static CBlock CreateGenesisBlock(const char* pszTimestamp, const std::string strFloData, const CScript& genesisOutputScript, uint32_t nTime, uint32_t nNonce, uint32_t nBits, int32_t nVersion, const CAmount& genesisReward)
 {
     CMutableTransaction txNew;
-    txNew.nVersion = 3;
+    txNew.nVersion = 2;
     txNew.vin.resize(1);
     txNew.vout.resize(1);
     txNew.vin[0].scriptSig = CScript() << 486604799 << CScriptNum(4) << std::vector<unsigned char>((const unsigned char*)pszTimestamp, (const unsigned char*)pszTimestamp + strlen(pszTimestamp));
     txNew.vout[0].nValue = genesisReward;
     txNew.vout[0].scriptPubKey = genesisOutputScript;
     txNew.strFloData = strFloData;
+
 
     CBlock genesis;
     genesis.nTime    = nTime;
@@ -57,13 +59,6 @@ static CBlock CreateGenesisBlock(uint32_t nTime, uint32_t nNonce, uint32_t nBits
     return CreateGenesisBlock(pszTimestamp, strFloData, genesisOutputScript, nTime, nNonce, nBits, nVersion, genesisReward);
 }
 
-void CChainParams::UpdateVersionBitsParameters(Consensus::DeploymentPos d, int64_t nStartTime, int64_t nTimeout)
-{
-    consensus.vDeployments[d].nStartTime = nStartTime;
-    consensus.vDeployments[d].nTimeout = nTimeout;
-}
-
-
 /**
  * Main network on which people trade goods and services.
  */
@@ -71,39 +66,38 @@ class CMainParams : public CChainParams {
 public:
     CMainParams() {
         strNetworkID = CBaseChainParams::MAIN;
+        consensus.signet_blocks = false;
+        consensus.signet_challenge.clear();
         consensus.nSubsidyHalvingInterval = 800000;
+        consensus.BIP16Exception = uint256S("");
         consensus.BIP34Height = 1679161;
         consensus.BIP34Hash = uint256S("490a10507efe42b89104408787088b7c43310cc230310201b5f57dac6f513b8b");
         consensus.BIP65Height = 1679161; // 490a10507efe42b89104408787088b7c43310cc230310201b5f57dac6f513b8b
         consensus.BIP66Height = 1679161; // 490a10507efe42b89104408787088b7c43310cc230310201b5f57dac6f513b8b
+        consensus.CSVHeight = 2749824; // 490a10507efe42b89104408787088b7c43310cc230310201b5f57dac6f513b8b
+        consensus.SegwitHeight = 2749824; // 490a10507efe42b89104408787088b7c43310cc230310201b5f57dac6f513b8b
+        consensus.MinBIP9WarningHeight = 2757888; // segwit activation height + miner confirmation window
         consensus.powLimit = uint256S("00000fffffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
         consensus.fPowAllowMinDifficultyBlocks = false;
         consensus.fPowNoRetargeting = false;
         consensus.nRuleChangeActivationThreshold = 6048; // 75% of 8064
-        consensus.nMinerConfirmationWindow = 8064;
+        consensus.nMinerConfirmationWindow = 8064; // nPowTargetTimespan / nPowTargetSpacing
         consensus.vDeployments[Consensus::DEPLOYMENT_TESTDUMMY].bit = 28;
-        consensus.vDeployments[Consensus::DEPLOYMENT_TESTDUMMY].nStartTime = 1199145601; // January 1, 2008
-        consensus.vDeployments[Consensus::DEPLOYMENT_TESTDUMMY].nTimeout = 1230767999; // December 31, 2008
+        consensus.vDeployments[Consensus::DEPLOYMENT_TESTDUMMY].nStartTime = Consensus::BIP9Deployment::NEVER_ACTIVE;
+        consensus.vDeployments[Consensus::DEPLOYMENT_TESTDUMMY].nTimeout = Consensus::BIP9Deployment::NO_TIMEOUT;
+        consensus.vDeployments[Consensus::DEPLOYMENT_TESTDUMMY].min_activation_height = 0; // No activation delay
 
-        // Deployment of BIP68, BIP112, and BIP113.
-        consensus.vDeployments[Consensus::DEPLOYMENT_CSV].bit = 0;
-        consensus.vDeployments[Consensus::DEPLOYMENT_CSV].nStartTime = 1619222400; // April 24th, 2021
-        consensus.vDeployments[Consensus::DEPLOYMENT_CSV].nTimeout = 1628640000; // August 11th, 2021
+        // Deployment of Taproot (BIPs 340-342)
+        consensus.vDeployments[Consensus::DEPLOYMENT_TAPROOT].bit = 2;
+        consensus.vDeployments[Consensus::DEPLOYMENT_TAPROOT].nStartTime = 1619222400; // April 24th, 2021
+        consensus.vDeployments[Consensus::DEPLOYMENT_TAPROOT].nTimeout = 1628640000; // August 11th, 2021
+        consensus.vDeployments[Consensus::DEPLOYMENT_TAPROOT].min_activation_height = 709632; // Approximately November 12th, 2021
 
-        // Deployment of SegWit (BIP141, BIP143, and BIP147)
-        consensus.vDeployments[Consensus::DEPLOYMENT_SEGWIT].bit = 1;
-        consensus.vDeployments[Consensus::DEPLOYMENT_SEGWIT].nStartTime = 1619222400; // April 24th, 2021
-        consensus.vDeployments[Consensus::DEPLOYMENT_SEGWIT].nTimeout = 1628640000; // August 11th, 2021
-
-        // The best chain should have at least this much work.
         consensus.nMinimumChainWork = uint256S("0x00000000000000000000000000000000000000000000000050b6f9f1c2494ad8"); // 3,000,000
-
-        // By default assume that the signatures in ancestors of this block are valid.
         consensus.defaultAssumeValid = uint256S("0x5ad3a302e3b1c681f0177411384ea03ee595a80a530c23a61f22839fae948e7f"); // 3,000,000
 
         // Difficulty adjustments
         consensus.nPowTargetSpacing = 40; // 40s block time
-
         // V1
         consensus.nTargetTimespan_Version1 = 60 * 60;
         consensus.nInterval_Version1 = consensus.nTargetTimespan_Version1 / consensus.nPowTargetSpacing;
@@ -135,8 +129,8 @@ public:
         nDefaultPort = 7312;
         nPruneAfterHeight = 100000;
         nNlrLimit = 100; // 100 * ~40s = ~66 minutes
-        // m_assumed_blockchain_size = 420;
-        // m_assumed_chain_state_size = 6;
+        m_assumed_blockchain_size = 840;
+        m_assumed_chain_state_size = 24;
 
         genesis = CreateGenesisBlock(1371488396, 1000112548, 0x1e0ffff0, 1, 100 * COIN);
         consensus.hashGenesisBlock = genesis.GetHash();
@@ -150,6 +144,7 @@ public:
         vSeeds.emplace_back("flodns.oip.fun", false);
         vSeeds.emplace_back("flodns.seednode.net", false);
 
+
         base58Prefixes[PUBKEY_ADDRESS] = std::vector<unsigned char>(1,35);  //F
         base58Prefixes[SCRIPT_ADDRESS] = std::vector<unsigned char>(1,8);   //4
         base58Prefixes[SCRIPT_ADDRESS2] = std::vector<unsigned char>(1,94); //e or f
@@ -158,17 +153,16 @@ public:
         base58Prefixes[EXT_PUBLIC_KEY] = {0x01, 0x34, 0x40, 0x6b}; //Fpub, Fprv for mainnet
         base58Prefixes[EXT_SECRET_KEY] = {0x01, 0x34, 0x3c, 0x31};
 
-        bech32_hrp = "flo";
+        bech32_hrp = "fc";
 
-        vFixedSeeds = std::vector<SeedSpec6>(pnSeed6_main, pnSeed6_main + ARRAYLEN(pnSeed6_main));
+        vFixedSeeds = std::vector<SeedSpec6>(pnSeed6_main, pnSeed6_main + (sizeof(pnSeed6_main)/sizeof((pnSeed6_main)[0])));
 
         fDefaultConsistencyChecks = false;
         fRequireStandard = true;
-        fMineBlocksOnDemand = false;
-        // m_is_test_chain = false;
-        // m_is_mockable_chain = false;
+        m_is_test_chain = false;
+        m_is_mockable_chain = false;
 
-        checkpointData = (CCheckpointData) {
+        checkpointData = {
             {
                 {      0, uint256S("0x09c7781c9df90708e278c35d38ea5c9041d7ecfcdd1c56ba67274b7cff3e1cea")},
                 {   8002, uint256S("0x73bc3b16d99bbf797f396c9532f80c3b73bb21304280de2efbc5edcb75739234")},
@@ -197,12 +191,15 @@ public:
             }
         };
 
+        m_assumeutxo_data = MapAssumeutxo{
+         // TODO to be specified in a future patch.
+        };
+
         chainTxData = ChainTxData{
-            // Data as of block 5ad3a302e3b1c681f0177411384ea03ee595a80a530c23a61f22839fae948e7f  (height 3,000,000).
-            1538389345, // * UNIX timestamp of last known number of transactions
-            4563023,    // * total number of transactions between genesis and that timestamp
-                        //   (the tx=... number in the SetBestChain debug.log lines)
-        	0.03  // * estimated number of transactions per second after that timestamp
+            // Data from RPC: getchaintxstats 4096 00000000000000000008a89e854d57e5667df88f1cdef6fde2fbca1de5b639ad
+            /* nTime    */ 1538389345,
+            /* nTxCount */ 4563023,
+            /* dTxRate  */ 0.03,
         };
     }
 };
@@ -214,34 +211,35 @@ class CTestNetParams : public CChainParams {
 public:
     CTestNetParams() {
         strNetworkID = CBaseChainParams::TESTNET;
+        consensus.signet_blocks = false;
+        consensus.signet_challenge.clear();
         consensus.nSubsidyHalvingInterval = 800000;
-        consensus.BIP34Height = 33600;  //already activated on main so activate here too
+        consensus.BIP16Exception = uint256S("");
+        consensus.BIP34Height = 33600;
         consensus.BIP34Hash = uint256S("4ac31d938531317c065405a9b23478c8c99204ff17fc294cb09821e2c2b42e65");
         consensus.BIP65Height = 33600; // 4ac31d938531317c065405a9b23478c8c99204ff17fc294cb09821e2c2b42e65
         consensus.BIP66Height = 33600; // 4ac31d938531317c065405a9b23478c8c99204ff17fc294cb09821e2c2b42e65
+        consensus.CSVHeight = 0; // 4ac31d938531317c065405a9b23478c8c99204ff17fc294cb09821e2c2b42e65
+        consensus.SegwitHeight = 0; // 4ac31d938531317c065405a9b23478c8c99204ff17fc294cb09821e2c2b42e65
+        consensus.MinBIP9WarningHeight = 34400; // segwit activation height + miner confirmation window
         consensus.powLimit = uint256S("00000fffffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
+        consensus.nPowTargetSpacing = 10 * 60;
         consensus.fPowAllowMinDifficultyBlocks = true;
         consensus.fPowNoRetargeting = false;
         consensus.nRuleChangeActivationThreshold = 600; // 75% of 800
         consensus.nMinerConfirmationWindow = 800;
         consensus.vDeployments[Consensus::DEPLOYMENT_TESTDUMMY].bit = 28;
-        consensus.vDeployments[Consensus::DEPLOYMENT_TESTDUMMY].nStartTime = 1199145601; // January 1, 2008
-        consensus.vDeployments[Consensus::DEPLOYMENT_TESTDUMMY].nTimeout = 1230767999; // December 31, 2008
+        consensus.vDeployments[Consensus::DEPLOYMENT_TESTDUMMY].nStartTime = Consensus::BIP9Deployment::NEVER_ACTIVE;
+        consensus.vDeployments[Consensus::DEPLOYMENT_TESTDUMMY].nTimeout = Consensus::BIP9Deployment::NO_TIMEOUT;
+        consensus.vDeployments[Consensus::DEPLOYMENT_TESTDUMMY].min_activation_height = 0; // No activation delay
 
-        // Deployment of BIP68, BIP112, and BIP113.
-        consensus.vDeployments[Consensus::DEPLOYMENT_CSV].bit = 0;
-        consensus.vDeployments[Consensus::DEPLOYMENT_CSV].nStartTime = 1619222400; // April 24th, 2021
-        consensus.vDeployments[Consensus::DEPLOYMENT_CSV].nTimeout = 1628640000; // August 11th, 2021
+        // Deployment of Taproot (BIPs 340-342)
+        consensus.vDeployments[Consensus::DEPLOYMENT_TAPROOT].bit = 2;
+        consensus.vDeployments[Consensus::DEPLOYMENT_TAPROOT].nStartTime = 1619222400; // April 24th, 2021
+        consensus.vDeployments[Consensus::DEPLOYMENT_TAPROOT].nTimeout = 1628640000; // August 11th, 2021
+        consensus.vDeployments[Consensus::DEPLOYMENT_TAPROOT].min_activation_height = 0; // No activation delay
 
-        // Deployment of SegWit (BIP141, BIP143, and BIP147)
-        consensus.vDeployments[Consensus::DEPLOYMENT_SEGWIT].bit = 1;
-        consensus.vDeployments[Consensus::DEPLOYMENT_SEGWIT].nStartTime = 1619222400; // April 24th, 2021
-        consensus.vDeployments[Consensus::DEPLOYMENT_SEGWIT].nTimeout = 1628640000; // August 11th, 2021
-
-        // The best chain should have at least this much work.
         consensus.nMinimumChainWork = uint256S("0x0000000000000000000000000000000000000000000000000000003dd47d3172"); // 230,000
-
-        // By default assume that the signatures in ancestors of this block are valid.
         consensus.defaultAssumeValid = uint256S("0xc2e6451240a580c3bfa5ddbfad1b001f8655e7c51d5c32c123e16f69c2d2b539"); // 230,000
 
         // Difficulty adjustments
@@ -270,6 +268,7 @@ public:
          * The characters are rarely used upper ASCII, not valid as UTF-8, and produce
          * a large 32-bit integer with any alignment.
          */
+
         pchMessageStart[0] = 0xfd;
         pchMessageStart[1] = 0xc0;
         pchMessageStart[2] = 0x5a;
@@ -277,6 +276,8 @@ public:
         nDefaultPort = 17312;
         nPruneAfterHeight = 100000;
         nNlrLimit = 50; // 50 * ~40s = ~33 minutes
+        m_assumed_blockchain_size = 40;
+        m_assumed_chain_state_size = 2;
 
         genesis = CreateGenesisBlock(1371387277, 1000580675, 0x1e0ffff0, 1, 100 * COIN);
         consensus.hashGenesisBlock = genesis.GetHash();
@@ -285,11 +286,8 @@ public:
 
         vFixedSeeds.clear();
         vSeeds.clear();
-
         // nodes with support for servicebits filtering should be at the top
         vSeeds.emplace_back("testnet.oip.fun", false);
-
-        bech32_hrp = "tflo";
 
         base58Prefixes[PUBKEY_ADDRESS] = std::vector<unsigned char>(1,115);
         base58Prefixes[SCRIPT_ADDRESS] = std::vector<unsigned char>(1,198);
@@ -299,29 +297,144 @@ public:
         base58Prefixes[EXT_PUBLIC_KEY] = {0x01, 0x34, 0x40, 0xe2};  //Fput, Fprt for testnet
         base58Prefixes[EXT_SECRET_KEY] = {0x01, 0x34, 0x3c, 0x23};
 
-        vFixedSeeds = std::vector<SeedSpec6>(pnSeed6_test, pnSeed6_test + ARRAYLEN(pnSeed6_test));
+        vFixedSeeds = std::vector<SeedSpec6>(pnSeed6_test, pnSeed6_test + (sizeof(pnSeed6_test)/sizeof((pnSeed6_test)[0])));
+
+        bech32_hrp = "tf";
 
         fDefaultConsistencyChecks = false;
         fRequireStandard = false;
-        fMineBlocksOnDemand = false;
+        m_is_test_chain = true;
+        m_is_mockable_chain = false;
 
-        checkpointData = (CCheckpointData) {
+        checkpointData = {
             {
                 {2056, uint256S("0xd3334db071731beaa651f10624c2fea1a5e8c6f9e50f0e602f86262938374148")},
                 {230000, uint256S("0xc2e6451240a580c3bfa5ddbfad1b001f8655e7c51d5c32c123e16f69c2d2b539")},
             }
         };
 
-        chainTxData = ChainTxData{
-            // flo: Data as of block c2e6451240a580c3bfa5ddbfad1b001f8655e7c51d5c32c123e16f69c2d2b539 (height 230,000)
-            1538135261, 			// * UNIX timestamp of last known number of transactions
-            265211,					// * total number of transactions between genesis and that timestamp
-            0.01                  	// * estimated number of transactions per second after that timestamp
+        m_assumeutxo_data = MapAssumeutxo{
+            // TODO to be specified in a future patch.
         };
 
+        chainTxData = ChainTxData{
+            // Data from RPC: getchaintxstats 4096 0000000000004ae2f3896ca8ecd41c460a35bf6184e145d91558cece1c688a76
+            /* nTime    */ 1538135261,
+            /* nTxCount */ 265211,
+            /* dTxRate  */ 0.01,
+        };
     }
 };
 
+/**
+ * Signet: test network with an additional consensus parameter (see BIP325).
+ */
+class SigNetParams : public CChainParams {
+public:
+    explicit SigNetParams(const ArgsManager& args) {
+        std::vector<uint8_t> bin;
+        vSeeds.clear();
+
+        if (!args.IsArgSet("-signetchallenge")) {
+            bin = ParseHex("512103ad5e0edad18cb1f0fc0d28a3d4f1f3e445640337489abb10404f2d1e086be430210359ef5021964fe22d6f8e05b2463c9540ce96883fe3b278760f048f5189f2e6c452ae");
+            // vSeeds.emplace_back("178.128.221.177");
+            // vSeeds.emplace_back("2a01:7c8:d005:390::5");
+            // vSeeds.emplace_back("v7ajjeirttkbnt32wpy3c6w3emwnfr3fkla7hpxcfokr3ysd3kqtzmqd.onion:38333");
+
+            consensus.nMinimumChainWork = uint256S("0x00000000000000000000000000000000000000000000000050b6f9f1c2494ad8");
+            consensus.defaultAssumeValid = uint256S("0x5ad3a302e3b1c681f0177411384ea03ee595a80a530c23a61f22839fae948e7f"); // 47200
+            m_assumed_blockchain_size = 1;
+            m_assumed_chain_state_size = 0;
+            chainTxData = ChainTxData{
+                // Data from RPC: getchaintxstats 4096 000000187d4440e5bff91488b700a140441e089a8aaea707414982460edbfe54
+                /* nTime    */ 1626696658,
+                /* nTxCount */ 387761,
+                /* dTxRate  */ 0.04035946932424404,
+            };
+        } else {
+            const auto signet_challenge = args.GetArgs("-signetchallenge");
+            if (signet_challenge.size() != 1) {
+                throw std::runtime_error(strprintf("%s: -signetchallenge cannot be multiple values.", __func__));
+            }
+            bin = ParseHex(signet_challenge[0]);
+
+            consensus.nMinimumChainWork = uint256{};
+            consensus.defaultAssumeValid = uint256{};
+            m_assumed_blockchain_size = 0;
+            m_assumed_chain_state_size = 0;
+            chainTxData = ChainTxData{
+                0,
+                0,
+                0,
+            };
+            LogPrintf("Signet with challenge %s\n", signet_challenge[0]);
+        }
+
+        if (args.IsArgSet("-signetseednode")) {
+            vSeeds = args.GetArgs("-signetseednode");
+        }
+
+        strNetworkID = CBaseChainParams::SIGNET;
+        consensus.signet_blocks = true;
+        consensus.signet_challenge.assign(bin.begin(), bin.end());
+        consensus.nSubsidyHalvingInterval = 800000;
+        consensus.BIP16Exception = uint256{};
+        consensus.BIP34Height = 1;
+        consensus.BIP34Hash = uint256{};
+        consensus.BIP65Height = 1;
+        consensus.BIP66Height = 1;
+        consensus.CSVHeight = 1;
+        consensus.SegwitHeight = 1;
+        consensus.fPowAllowMinDifficultyBlocks = false;
+        consensus.fPowNoRetargeting = false;
+        consensus.nRuleChangeActivationThreshold = 600; // 75% of 800
+        consensus.nMinerConfirmationWindow = 800;
+        consensus.MinBIP9WarningHeight = 0;
+        consensus.powLimit = uint256S("00000377ae000000000000000000000000000000000000000000000000000000");
+        consensus.vDeployments[Consensus::DEPLOYMENT_TESTDUMMY].bit = 28;
+        consensus.vDeployments[Consensus::DEPLOYMENT_TESTDUMMY].nStartTime = Consensus::BIP9Deployment::NEVER_ACTIVE;
+        consensus.vDeployments[Consensus::DEPLOYMENT_TESTDUMMY].nTimeout = Consensus::BIP9Deployment::NO_TIMEOUT;
+        consensus.vDeployments[Consensus::DEPLOYMENT_TESTDUMMY].min_activation_height = 0; // No activation delay
+
+        // Activation of Taproot (BIPs 340-342)
+        consensus.vDeployments[Consensus::DEPLOYMENT_TAPROOT].bit = 2;
+        consensus.vDeployments[Consensus::DEPLOYMENT_TAPROOT].nStartTime = Consensus::BIP9Deployment::ALWAYS_ACTIVE;
+        consensus.vDeployments[Consensus::DEPLOYMENT_TAPROOT].nTimeout = Consensus::BIP9Deployment::NO_TIMEOUT;
+        consensus.vDeployments[Consensus::DEPLOYMENT_TAPROOT].min_activation_height = 0; // No activation delay
+
+        // message start is defined as the first 4 bytes of the sha256d of the block script
+        CHashWriter h(SER_DISK, 0);
+        h << consensus.signet_challenge;
+        uint256 hash = h.GetHash();
+        memcpy(pchMessageStart, hash.begin(), 4);
+
+        nDefaultPort = 17512;
+        nPruneAfterHeight = 1000;
+        nNlrLimit = 100; // 100 * ~40s = ~66 minutes
+
+        genesis = CreateGenesisBlock(1371488396, 1000112548, 0x1e0ffff0, 1, 100 * COIN);
+        consensus.hashGenesisBlock = genesis.GetHash();
+        assert(consensus.hashGenesisBlock == uint256S("0x09c7781c9df90708e278c35d38ea5c9041d7ecfcdd1c56ba67274b7cff3e1cea"));
+        assert(genesis.hashMerkleRoot == uint256S("0x730f0c8ddc5a592d5512566890e2a73e45feaa6748b24b849d1c29a7ab2b2300"));
+
+        vFixedSeeds.clear();
+
+        base58Prefixes[PUBKEY_ADDRESS] = std::vector<unsigned char>(1,35);  //F
+        base58Prefixes[SCRIPT_ADDRESS] = std::vector<unsigned char>(1,8);   //4
+        base58Prefixes[SCRIPT_ADDRESS2] = std::vector<unsigned char>(1,94); //e or f
+        base58Prefixes[SECRET_KEY] =     std::vector<unsigned char>(1,163); //R
+        base58Prefixes[SECRET_KEY2] =    std::vector<unsigned char>(1,176); //T
+        base58Prefixes[EXT_PUBLIC_KEY] = {0x01, 0x34, 0x40, 0x6b}; //Fpub, Fprv for mainnet
+        base58Prefixes[EXT_SECRET_KEY] = {0x01, 0x34, 0x3c, 0x31};
+
+        bech32_hrp = "fb";
+
+        fDefaultConsistencyChecks = false;
+        fRequireStandard = true;
+        m_is_test_chain = true;
+        m_is_mockable_chain = false;
+    }
+};
 
 /**
  * Regression test: intended for private networks only. Has minimal difficulty to ensure that
@@ -331,11 +444,17 @@ class CRegTestParams : public CChainParams {
 public:
     explicit CRegTestParams(const ArgsManager& args) {
         strNetworkID =  CBaseChainParams::REGTEST;
+        consensus.signet_blocks = false;
+        consensus.signet_challenge.clear();
         consensus.nSubsidyHalvingInterval = 150;
+        consensus.BIP16Exception = uint256();
         consensus.BIP34Height = 100000000; // BIP34 has not activated on regtest (far in the future so block v1 are not rejected in tests)
         consensus.BIP34Hash = uint256();
         consensus.BIP65Height = 1351; // BIP65 activated on regtest (Used in rpc activation tests)
         consensus.BIP66Height = 1251; // BIP66 activated on regtest (Used in rpc activation tests)
+        consensus.CSVHeight = 0; // CSV activated on regtest (Used in rpc activation tests)
+        consensus.SegwitHeight = 0; // SEGWIT is always activated on regtest unless overridden
+        consensus.MinBIP9WarningHeight = 0;
         consensus.powLimit = uint256S("7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
 
         consensus.fPowAllowMinDifficultyBlocks = true;
@@ -345,17 +464,13 @@ public:
 
         consensus.vDeployments[Consensus::DEPLOYMENT_TESTDUMMY].bit = 28;
         consensus.vDeployments[Consensus::DEPLOYMENT_TESTDUMMY].nStartTime = 0;
-        consensus.vDeployments[Consensus::DEPLOYMENT_TESTDUMMY].nTimeout = 999999999999ULL;
+        consensus.vDeployments[Consensus::DEPLOYMENT_TESTDUMMY].nTimeout = Consensus::BIP9Deployment::NO_TIMEOUT;
+        consensus.vDeployments[Consensus::DEPLOYMENT_TESTDUMMY].min_activation_height = 0; // No activation delay
 
-        // Deployment of BIP68, BIP112, and BIP113.
-        consensus.vDeployments[Consensus::DEPLOYMENT_CSV].bit = 0;
-        consensus.vDeployments[Consensus::DEPLOYMENT_CSV].nStartTime = 0;
-        consensus.vDeployments[Consensus::DEPLOYMENT_CSV].nTimeout = 999999999999ULL;
-
-        // Deployment of SegWit (BIP141, BIP143, and BIP147)
-        consensus.vDeployments[Consensus::DEPLOYMENT_SEGWIT].bit = 1;
-        consensus.vDeployments[Consensus::DEPLOYMENT_SEGWIT].nStartTime = 0;
-        consensus.vDeployments[Consensus::DEPLOYMENT_SEGWIT].nTimeout = 999999999999ULL;
+        consensus.vDeployments[Consensus::DEPLOYMENT_TAPROOT].bit = 2;
+        consensus.vDeployments[Consensus::DEPLOYMENT_TAPROOT].nStartTime = Consensus::BIP9Deployment::ALWAYS_ACTIVE;
+        consensus.vDeployments[Consensus::DEPLOYMENT_TAPROOT].nTimeout = Consensus::BIP9Deployment::NO_TIMEOUT;
+        consensus.vDeployments[Consensus::DEPLOYMENT_TAPROOT].min_activation_height = 0; // No activation delay
 
         // The best chain should have at least this much work.
         consensus.nMinimumChainWork = uint256S("0x00");
@@ -396,6 +511,8 @@ public:
         nDefaultPort = 17412;
         nPruneAfterHeight = 1000;
         nNlrLimit = 10;
+        m_assumed_blockchain_size = 0;
+        m_assumed_chain_state_size = 0;
 
         UpdateActivationParametersFromArgs(args);
 
@@ -405,9 +522,36 @@ public:
         assert(genesis.hashMerkleRoot == uint256S("0x730f0c8ddc5a592d5512566890e2a73e45feaa6748b24b849d1c29a7ab2b2300"));
 
         vFixedSeeds.clear(); //!< Regtest mode doesn't have any fixed seeds.
-        vSeeds.clear();      //!< Regtest mode doesn't have any DNS seeds.
+        vSeeds.clear();
+        vSeeds.emplace_back("dummySeed.invalid.");
 
-        bech32_hrp = "flort";
+        fDefaultConsistencyChecks = true;
+        fRequireStandard = true;
+        m_is_test_chain = true;
+        m_is_mockable_chain = true;
+
+        // checkpointData = {
+        //     {
+        //         {0, uint256S("0f9188f13cb7b2c71f2a335e3a4fc328bf5beb436012afca590b1a11466e2206")},
+        //     }
+        // };
+
+        m_assumeutxo_data = MapAssumeutxo{
+            // {
+            //     110,
+            //     {AssumeutxoHash{uint256S("0x1ebbf5850204c0bdb15bf030f47c7fe91d45c44c712697e4509ba67adb01c618")}, 110},
+            // },
+            // {
+            //     200,
+            //     {AssumeutxoHash{uint256S("0x51c8d11d8b5c1de51543c579736e786aa2736206d1e11e627568029ce092cf62")}, 200},
+            // },
+        };
+
+        chainTxData = ChainTxData{
+            0,
+            0,
+            0
+        };
 
         base58Prefixes[PUBKEY_ADDRESS] = std::vector<unsigned char>(1,115);
         base58Prefixes[SCRIPT_ADDRESS] = std::vector<unsigned char>(1,198);
@@ -417,63 +561,61 @@ public:
         base58Prefixes[EXT_PUBLIC_KEY] = {0x04, 0x35, 0x87, 0xCF};
         base58Prefixes[EXT_SECRET_KEY] = {0x04, 0x35, 0x83, 0x94};
 
-        fDefaultConsistencyChecks = true;
-        fRequireStandard = false;
-        fMineBlocksOnDemand = true; 
-
-//        checkpointData = (CCheckpointData) {
-//            {
-//                {0, uint256S("530827f38f93b43ed12af0b3ad25a288dc02ed74d6d7857862df51fc56c416f9")},
-//            }
-//        };
-
-        chainTxData = ChainTxData{
-            0,
-            0,
-            0
-        };
+        bech32_hrp = "fcrt";
     }
 
     /**
      * Allows modifying the Version Bits regtest parameters.
      */
-    void UpdateVersionBitsParameters(Consensus::DeploymentPos d, int64_t nStartTime, int64_t nTimeout)
+    void UpdateVersionBitsParameters(Consensus::DeploymentPos d, int64_t nStartTime, int64_t nTimeout, int min_activation_height)
     {
         consensus.vDeployments[d].nStartTime = nStartTime;
         consensus.vDeployments[d].nTimeout = nTimeout;
+        consensus.vDeployments[d].min_activation_height = min_activation_height;
     }
     void UpdateActivationParametersFromArgs(const ArgsManager& args);
 };
 
 void CRegTestParams::UpdateActivationParametersFromArgs(const ArgsManager& args)
 {
-    if (args.IsArgSet("-vbparams")) return;
+    if (args.IsArgSet("-segwitheight")) {
+        int64_t height = args.GetArg("-segwitheight", consensus.SegwitHeight);
+        if (height < 0 || height >= std::numeric_limits<int>::max()) {
+            throw std::runtime_error(strprintf("Activation height %ld for segwit is out of valid range.", height));
+        }
+        consensus.SegwitHeight = static_cast<int>(height);
+    }
+
+    if (!args.IsArgSet("-vbparams")) return;
 
     for (const std::string& strDeployment : args.GetArgs("-vbparams")) {
         std::vector<std::string> vDeploymentParams;
         boost::split(vDeploymentParams, strDeployment, boost::is_any_of(":"));
-        if (vDeploymentParams.size() != 3) {
-            return InitError("Version bits parameters malformed, expecting deployment:start:end");
+        if (vDeploymentParams.size() < 3 || 4 < vDeploymentParams.size()) {
+            throw std::runtime_error("Version bits parameters malformed, expecting deployment:start:end[:min_activation_height]");
         }
         int64_t nStartTime, nTimeout;
+        int min_activation_height = 0;
         if (!ParseInt64(vDeploymentParams[1], &nStartTime)) {
-            return InitError(strprintf("Invalid nStartTime (%s)", vDeploymentParams[1]));
+            throw std::runtime_error(strprintf("Invalid nStartTime (%s)", vDeploymentParams[1]));
         }
         if (!ParseInt64(vDeploymentParams[2], &nTimeout)) {
-            return InitError(strprintf("Invalid nTimeout (%s)", vDeploymentParams[2]));
+            throw std::runtime_error(strprintf("Invalid nTimeout (%s)", vDeploymentParams[2]));
+        }
+        if (vDeploymentParams.size() >= 4 && !ParseInt32(vDeploymentParams[3], &min_activation_height)) {
+            throw std::runtime_error(strprintf("Invalid min_activation_height (%s)", vDeploymentParams[3]));
         }
         bool found = false;
-        for (int j=0; j<(int)Consensus::MAX_VERSION_BITS_DEPLOYMENTS; ++j)
-        {
-            if (vDeploymentParams[0].compare(VersionBitsDeploymentInfo[j].name) == 0) {
-                UpdateVersionBitsParameters(Consensus::DeploymentPos(j), nStartTime, nTimeout);
+        for (int j=0; j < (int)Consensus::MAX_VERSION_BITS_DEPLOYMENTS; ++j) {
+            if (vDeploymentParams[0] == VersionBitsDeploymentInfo[j].name) {
+                UpdateVersionBitsParameters(Consensus::DeploymentPos(j), nStartTime, nTimeout, min_activation_height);
                 found = true;
-                LogPrintf("Setting version bits activation parameters for %s to start=%ld, timeout=%ld\n", vDeploymentParams[0], nStartTime, nTimeout);
+                LogPrintf("Setting version bits activation parameters for %s to start=%ld, timeout=%ld, min_activation_height=%d\n", vDeploymentParams[0], nStartTime, nTimeout, min_activation_height);
                 break;
             }
         }
         if (!found) {
-            return InitError(strprintf("Invalid deployment (%s)", vDeploymentParams[0]));
+            throw std::runtime_error(strprintf("Invalid deployment (%s)", vDeploymentParams[0]));
         }
     }
 }
@@ -491,6 +633,8 @@ std::unique_ptr<const CChainParams> CreateChainParams(const ArgsManager& args, c
         return std::unique_ptr<CChainParams>(new CMainParams());
     } else if (chain == CBaseChainParams::TESTNET) {
         return std::unique_ptr<CChainParams>(new CTestNetParams());
+    } else if (chain == CBaseChainParams::SIGNET) {
+        return std::unique_ptr<CChainParams>(new SigNetParams(args));
     } else if (chain == CBaseChainParams::REGTEST) {
         return std::unique_ptr<CChainParams>(new CRegTestParams(args));
     }

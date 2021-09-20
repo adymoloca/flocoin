@@ -4,7 +4,7 @@
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 #if defined(HAVE_CONFIG_H)
-#include <config/bitcoin-config.h>
+#include <config/flocoin-config.h>
 #endif
 
 #include <net.h>
@@ -150,7 +150,7 @@ bool GetLocal(CService& addr, const CNetAddr *paddrPeer)
 }
 
 //! Convert the serialized seeds into usable address objects.
-static std::vector<CAddress> ConvertSeeds(const std::vector<uint8_t> &vSeedsIn)
+static std::vector<CAddress> ConvertSeeds(const std::vector<SeedSpec6> &vSeedsIn)
 {
     // It'll only connect to one or two seed nodes because once it connects,
     // it'll get a pile of addresses with newer timestamps.
@@ -158,14 +158,13 @@ static std::vector<CAddress> ConvertSeeds(const std::vector<uint8_t> &vSeedsIn)
     // weeks ago.
     const int64_t nOneWeek = 7*24*60*60;
     std::vector<CAddress> vSeedsOut;
-    FastRandomContext rng;
-    CDataStream s(vSeedsIn, SER_NETWORK, PROTOCOL_VERSION | ADDRV2_FORMAT);
-    while (!s.eof()) {
-        CService endpoint;
-        s >> endpoint;
-        CAddress addr{endpoint, GetDesirableServiceFlags(NODE_NONE)};
-        addr.nTime = GetTime() - rng.randrange(nOneWeek) - nOneWeek;
-        LogPrint(BCLog::NET, "Added hardcoded seed: %s\n", addr.ToString());
+    vSeedsOut.reserve(vSeedsIn.size());
+    for (std::vector<SeedSpec6>::const_iterator i(vSeedsIn.begin()); i != vSeedsIn.end(); ++i)
+    {
+        struct in6_addr ip;
+        memcpy(&ip, i->addr, sizeof(ip));
+        CAddress addr(CService(ip, i->port), NODE_NETWORK);
+        addr.nTime = GetTime() - GetRand(nOneWeek) - nOneWeek;
         vSeedsOut.push_back(addr);
     }
     return vSeedsOut;

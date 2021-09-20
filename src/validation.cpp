@@ -35,6 +35,7 @@
 #include <script/script.h>
 #include <script/sigcache.h>
 #include <shutdown.h>
+#include <signet.h>
 #include <timedata.h>
 #include <tinyformat.h>
 #include <txdb.h>
@@ -570,7 +571,7 @@ bool MemPoolAccept::PreChecks(ATMPArgs& args, Workspace& ws)
         return state.Invalid(TxValidationResult::TX_NOT_STANDARD, reason);
 
     if (tx.strFloData.length() > CTransaction::MAX_FLO_DATA_SIZE) {
-        return state.DoS(0, false, REJECT_INVALID, "flo-data-too-large");
+        return state.Invalid(TxValidationResult::TX_NOT_STANDARD, "flo-data-too-large");
     }
     
     // Do not work on transactions that are too small.
@@ -687,7 +688,8 @@ bool MemPoolAccept::PreChecks(ATMPArgs& args, Workspace& ws)
     }
 
     // Check for non-standard pay-to-script-hash in inputs
-    if (fRequireStandard && !AreInputsStandard(tx, m_view)) {
+    const bool taproot_active = DeploymentActiveAfter(m_active_chainstate.m_chain.Tip(), args.m_chainparams.GetConsensus(), Consensus::DEPLOYMENT_TAPROOT);
+    if (fRequireStandard && !AreInputsStandard(tx, m_view, taproot_active)) {
         return state.Invalid(TxValidationResult::TX_INPUTS_NOT_STANDARD, "bad-txns-nonstandard-inputs");
     }
 
@@ -776,7 +778,7 @@ bool MemPoolAccept::PreChecks(ATMPArgs& args, Workspace& ws)
         // being able to broadcast descendants of an unconfirmed transaction
         // to be secure by simply only having two immediately-spendable
         // outputs - one for each counterparty. For more info on the uses for
-        // this, see https://lists.linuxfoundation.org/pipermail/bitcoin-dev/2018-November/016518.html
+        // this, see https://lists.linuxfoundation.org/pipermail/flocoin-dev/2018-November/016518.html
         if (nSize >  EXTRA_DESCENDANT_TX_SIZE_LIMIT ||
                 !m_pool.CalculateMemPoolAncestors(*entry, setAncestors, 2, m_limit_ancestor_size, m_limit_descendants + 1, m_limit_descendant_size + EXTRA_DESCENDANT_TX_SIZE_LIMIT, dummy_err_string)) {
             return state.Invalid(TxValidationResult::TX_MEMPOOL_POLICY, "too-long-mempool-chain", errString);
@@ -1164,8 +1166,8 @@ CAmount GetBlockSubsidy(int nHeight, const Consensus::Params& consensusParams)
     if (halvings >= 64)
         return 0;
 
-    CAmount nSubsidy = 50 * COIN;
-    // Subsidy is cut in half every 210,000 blocks which will occur approximately every 4 years.
+    CAmount nSubsidy = 100 * COIN;
+    // Subsidy is cut in half every 800,000 blocks which will occur approximately every year.
     nSubsidy >>= halvings;
     return nSubsidy;
 }
@@ -1638,6 +1640,11 @@ static unsigned int GetBlockScriptFlags(const CBlockIndex* pindex, const Consens
     // Enforce CHECKSEQUENCEVERIFY (BIP112)
     if (DeploymentActiveAt(*pindex, consensusparams, Consensus::DEPLOYMENT_CSV)) {
         flags |= SCRIPT_VERIFY_CHECKSEQUENCEVERIFY;
+    }
+
+    // Enforce Taproot (BIP340-BIP342)
+    if (DeploymentActiveAt(*pindex, consensusparams, Consensus::DEPLOYMENT_TAPROOT)) {
+        flags |= SCRIPT_VERIFY_TAPROOT;
     }
 
     // Enforce BIP147 NULLDUMMY (activated simultaneously with segwit)
@@ -2477,7 +2484,7 @@ bool CChainState::ActivateBestChainStep(BlockValidationState& state, CBlockIndex
 
     int nNlrLimit = gArgs.GetArg("-nlrlimit", Params().NoLargeReorgLimit());
     if (nNlrLimit != 0 && !reconsider && !IsInitialBlockDownload() && pindexFork != nullptr
-        && chainActive.Tip()->nHeight - pindexFork->nHeight >= nNlrLimit) {
+        && m_chain.Tip()->nHeight - pindexFork->nHeight >= nNlrLimit) {
         LogPrintf("%s: NLR triggered! current height=%d current hash=%s | fork height=%d fork hash=%s\n", __func__,
                   pindexOldTip->nHeight, pindexOldTip->GetBlockHash().ToString(), pindexMostWork->nHeight,
                   pindexMostWork->GetBlockHash().ToString());
@@ -3010,7 +3017,7 @@ void CChainState::ReceivedBlockTransactions(const CBlock& block, CBlockIndex* pi
 static bool CheckBlockHeader(const CBlockHeader& block, BlockValidationState& state, const Consensus::Params& consensusParams, bool fCheckPOW = true)
 {
     // Check proof of work matches claimed amount
-    if (fCheckPOW && !CheckProofOfWork(block.GetHash(), block.nBits, consensusParams))
+    if (fCheckPOW && !CheckProofOfWork(block.GetPoWHash(), block.nBits, consensusParams))
         return state.Invalid(BlockValidationResult::BLOCK_INVALID_HEADER, "high-hash", "proof of work failed");
 
     return true;
@@ -3027,6 +3034,11 @@ bool CheckBlock(const CBlock& block, BlockValidationState& state, const Consensu
     // redundant with the call in AcceptBlockHeader.
     if (!CheckBlockHeader(block, state, consensusParams, fCheckPOW))
         return false;
+
+    // Signet only: check block solution
+    if (consensusParams.signet_blocks && fCheckPOW && !CheckSignetBlockSolution(block, consensusParams)) {
+        return state.Invalid(BlockValidationResult::BLOCK_CONSENSUS, "bad-signet-blksig", "signet block signature validation failure");
+    }
 
     // Check the merkle root.
     if (fCheckMerkleRoot) {
@@ -3202,7 +3214,7 @@ static bool ContextualCheckBlock(const CBlock& block, BlockValidationState& stat
     // Enforce BIP113 (Median Time Past).
     int nLockTimeFlags = 0;
     if (DeploymentActiveAfter(pindexPrev, consensusParams, Consensus::DEPLOYMENT_CSV)) {
-        assert(pindexPrev != nullptr);
+        assert(&pindexPrev != nullptr);
         nLockTimeFlags |= LOCKTIME_MEDIAN_TIME_PAST;
     }
 
@@ -3490,7 +3502,7 @@ bool ChainstateManager::ProcessNewBlock(const CChainParams& chainparams, const s
         // Skipping AcceptBlock() for CheckBlock() failures means that we will never mark a block as invalid if
         // CheckBlock() fails.  This is protective against consensus failure if there are any unknown forms of block
         // malleability that cause CheckBlock() to fail; see e.g. CVE-2012-2459 and
-        // https://lists.linuxfoundation.org/pipermail/bitcoin-dev/2019-February/016697.html.  Because CheckBlock() is
+        // https://lists.linuxfoundation.org/pipermail/flocoin-dev/2019-February/016697.html.  Because CheckBlock() is
         // not very expensive, the anti-DoS benefits of caching failure (of a definitely-invalid block) are not substantial.
         bool ret = CheckBlock(*block, state, chainparams.GetConsensus());
         if (ret) {
@@ -4709,6 +4721,18 @@ CChainState& ChainstateManager::InitializeChainstate(
     return *to_modify;
 }
 
+const AssumeutxoData* ExpectedAssumeutxo(
+    const int height, const CChainParams& chainparams)
+{
+    const MapAssumeutxo& valid_assumeutxos_map = chainparams.Assumeutxo();
+    const auto assumeutxo_found = valid_assumeutxos_map.find(height);
+
+    if (assumeutxo_found != valid_assumeutxos_map.end()) {
+        return &assumeutxo_found->second;
+    }
+    return nullptr;
+}
+
 bool ChainstateManager::ActivateSnapshot(
         CAutoFile& coins_file,
         const SnapshotMetadata& metadata,
@@ -4812,12 +4836,15 @@ bool ChainstateManager::PopulateAndValidateSnapshot(
     }
 
     int base_height = snapshot_start_block->nHeight;
+    auto maybe_au_data = ExpectedAssumeutxo(base_height, ::Params());
 
     if (!maybe_au_data) {
         LogPrintf("[snapshot] assumeutxo height in snapshot metadata not recognized " /* Continued */
                   "(%d) - refusing to load snapshot\n", base_height);
         return false;
     }
+
+    const AssumeutxoData& au_data = *maybe_au_data;
 
     COutPoint outpoint;
     Coin coin;
@@ -4926,6 +4953,13 @@ bool ChainstateManager::PopulateAndValidateSnapshot(
 
     if (!GetUTXOStats(snapshot_coinsdb, WITH_LOCK(::cs_main, return std::ref(m_blockman)), stats, breakpoint_fnc)) {
         LogPrintf("[snapshot] failed to generate coins stats\n");
+        return false;
+    }
+
+    // Assert that the deserialized chainstate contents match the expected assumeutxo value.
+    if (AssumeutxoHash{stats.hashSerialized} != au_data.hash_serialized) {
+        LogPrintf("[snapshot] bad snapshot content hash: expected %s, got %s\n",
+            au_data.hash_serialized.ToString(), stats.hashSerialized.ToString());
         return false;
     }
 

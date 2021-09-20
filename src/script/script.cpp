@@ -1,6 +1,5 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
 // Copyright (c) 2009-2020 The Bitcoin Core developers
-// Copyright (c) Flo Developers 2013-2021
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -140,6 +139,9 @@ std::string GetOpName(opcodetype opcode)
     case OP_NOP8                   : return "OP_NOP8";
     case OP_NOP9                   : return "OP_NOP9";
     case OP_NOP10                  : return "OP_NOP10";
+
+    // Opcode added by BIP 342 (Tapscript)
+    case OP_CHECKSIGADD            : return "OP_CHECKSIGADD";
 
     case OP_INVALIDOPCODE          : return "OP_INVALIDOPCODE";
 

@@ -9,7 +9,7 @@ from decimal import Decimal
 from itertools import product
 
 from test_framework.descriptors import descsum_create
-from test_framework.test_framework import BitcoinTestFramework
+from test_framework.test_framework import FlocoinTestFramework
 from test_framework.util import (
     assert_approx,
     assert_equal,
@@ -28,7 +28,7 @@ def get_unspent(listunspent, amount):
             return utx
     raise AssertionError('Could not find unspent with amount={}'.format(amount))
 
-class RawTransactionsTest(BitcoinTestFramework):
+class RawTransactionsTest(FlocoinTestFramework):
     def set_test_params(self):
         self.num_nodes = 4
         self.setup_clean_chain = True
@@ -235,7 +235,7 @@ class RawTransactionsTest(BitcoinTestFramework):
         dec_tx  = self.nodes[2].decoderawtransaction(rawtx)
         assert_equal(utx['txid'], dec_tx['vin'][0]['txid'])
 
-        assert_raises_rpc_error(-5, "Change address must be a valid bitcoin address", self.nodes[2].fundrawtransaction, rawtx, {'changeAddress':'foobar'})
+        assert_raises_rpc_error(-5, "Change address must be a valid flocoin address", self.nodes[2].fundrawtransaction, rawtx, {'changeAddress':'foobar'})
 
     def test_valid_change_address(self):
         self.log.info("Test fundrawtxn with a provided change address")
@@ -722,10 +722,10 @@ class RawTransactionsTest(BitcoinTestFramework):
         rawtx = node.createrawtransaction(inputs, outputs)
 
         result = node.fundrawtransaction(rawtx)  # uses self.min_relay_tx_fee (set by settxfee)
-        btc_kvb_to_sat_vb = 100000  # (1e5)
-        result1 = node.fundrawtransaction(rawtx, {"fee_rate": str(2 * btc_kvb_to_sat_vb * self.min_relay_tx_fee)})
+        flo_kvb_to_sat_vb = 100000  # (1e5)
+        result1 = node.fundrawtransaction(rawtx, {"fee_rate": str(2 * flo_kvb_to_sat_vb * self.min_relay_tx_fee)})
         result2 = node.fundrawtransaction(rawtx, {"feeRate": 2 * self.min_relay_tx_fee})
-        result3 = node.fundrawtransaction(rawtx, {"fee_rate": 10 * btc_kvb_to_sat_vb * self.min_relay_tx_fee})
+        result3 = node.fundrawtransaction(rawtx, {"fee_rate": 10 * flo_kvb_to_sat_vb * self.min_relay_tx_fee})
         result4 = node.fundrawtransaction(rawtx, {"feeRate": str(10 * self.min_relay_tx_fee)})
 
         result_fee_rate = result['fee'] * 1000 / count_bytes(result['hex'])
@@ -846,12 +846,12 @@ class RawTransactionsTest(BitcoinTestFramework):
         assert_equal(change[3] + result[3]['fee'], change[4])
 
         # Test subtract fee from outputs with fee_rate (sat/vB)
-        btc_kvb_to_sat_vb = 100000  # (1e5)
+        flo_kvb_to_sat_vb = 100000  # (1e5)
         result = [self.nodes[3].fundrawtransaction(rawtx),  # uses self.min_relay_tx_fee (set by settxfee)
             self.nodes[3].fundrawtransaction(rawtx, {"subtractFeeFromOutputs": []}),  # empty subtraction list
             self.nodes[3].fundrawtransaction(rawtx, {"subtractFeeFromOutputs": [0]}),  # uses self.min_relay_tx_fee (set by settxfee)
-            self.nodes[3].fundrawtransaction(rawtx, {"fee_rate": 2 * btc_kvb_to_sat_vb * self.min_relay_tx_fee}),
-            self.nodes[3].fundrawtransaction(rawtx, {"fee_rate": 2 * btc_kvb_to_sat_vb * self.min_relay_tx_fee, "subtractFeeFromOutputs": [0]}),]
+            self.nodes[3].fundrawtransaction(rawtx, {"fee_rate": 2 * flo_kvb_to_sat_vb * self.min_relay_tx_fee}),
+            self.nodes[3].fundrawtransaction(rawtx, {"fee_rate": 2 * flo_kvb_to_sat_vb * self.min_relay_tx_fee, "subtractFeeFromOutputs": [0]}),]
         dec_tx = [self.nodes[3].decoderawtransaction(tx_['hex']) for tx_ in result]
         output = [d['vout'][1 - r['changepos']]['value'] for d, r in zip(dec_tx, result)]
         change = [d['vout'][r['changepos']]['value'] for d, r in zip(dec_tx, result)]

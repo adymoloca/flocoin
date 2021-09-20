@@ -1,5 +1,4 @@
 # Copyright (c) 2019-2020 Pieter Wuille
-# Copyright (c) Flo Developers 2013-2021
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 """Test-only secp256k1 elliptic curve implementation
@@ -441,3 +440,110 @@ def tweak_add_pubkey(key, tweak):
     if Q is None:
         return None
     return (Q[0].to_bytes(32, 'big'), not SECP256K1.has_even_y(Q))
+
+def verify_schnorr(key, sig, msg):
+    """Verify a Schnorr signature (see BIP 340).
+
+    - key is a 32-byte xonly pubkey (computed using compute_xonly_pubkey).
+    - sig is a 64-byte Schnorr signature
+    - msg is a 32-byte message
+    """
+    assert len(key) == 32
+    assert len(msg) == 32
+    assert len(sig) == 64
+
+    x_coord = int.from_bytes(key, 'big')
+    if x_coord == 0 or x_coord >= SECP256K1_FIELD_SIZE:
+        return False
+    P = SECP256K1.lift_x(x_coord)
+    if P is None:
+        return False
+    r = int.from_bytes(sig[0:32], 'big')
+    if r >= SECP256K1_FIELD_SIZE:
+        return False
+    s = int.from_bytes(sig[32:64], 'big')
+    if s >= SECP256K1_ORDER:
+        return False
+    e = int.from_bytes(TaggedHash("BIP0340/challenge", sig[0:32] + key + msg), 'big') % SECP256K1_ORDER
+    R = SECP256K1.mul([(SECP256K1_G, s), (P, SECP256K1_ORDER - e)])
+    if not SECP256K1.has_even_y(R):
+        return False
+    if ((r * R[2] * R[2]) % SECP256K1_FIELD_SIZE) != R[0]:
+        return False
+    return True
+
+def sign_schnorr(key, msg, aux=None, flip_p=False, flip_r=False):
+    """Create a Schnorr signature (see BIP 340)."""
+
+    if aux is None:
+        aux = bytes(32)
+
+    assert len(key) == 32
+    assert len(msg) == 32
+    assert len(aux) == 32
+
+    sec = int.from_bytes(key, 'big')
+    if sec == 0 or sec >= SECP256K1_ORDER:
+        return None
+    P = SECP256K1.affine(SECP256K1.mul([(SECP256K1_G, sec)]))
+    if SECP256K1.has_even_y(P) == flip_p:
+        sec = SECP256K1_ORDER - sec
+    t = (sec ^ int.from_bytes(TaggedHash("BIP0340/aux", aux), 'big')).to_bytes(32, 'big')
+    kp = int.from_bytes(TaggedHash("BIP0340/nonce", t + P[0].to_bytes(32, 'big') + msg), 'big') % SECP256K1_ORDER
+    assert kp != 0
+    R = SECP256K1.affine(SECP256K1.mul([(SECP256K1_G, kp)]))
+    k = kp if SECP256K1.has_even_y(R) != flip_r else SECP256K1_ORDER - kp
+    e = int.from_bytes(TaggedHash("BIP0340/challenge", R[0].to_bytes(32, 'big') + P[0].to_bytes(32, 'big') + msg), 'big') % SECP256K1_ORDER
+    return R[0].to_bytes(32, 'big') + ((k + e * sec) % SECP256K1_ORDER).to_bytes(32, 'big')
+
+class TestFrameworkKey(unittest.TestCase):
+    def test_schnorr(self):
+        """Test the Python Schnorr implementation."""
+        byte_arrays = [generate_privkey() for _ in range(3)] + [v.to_bytes(32, 'big') for v in [0, SECP256K1_ORDER - 1, SECP256K1_ORDER, 2**256 - 1]]
+        keys = {}
+        for privkey in byte_arrays:  # build array of key/pubkey pairs
+            pubkey, _ = compute_xonly_pubkey(privkey)
+            if pubkey is not None:
+                keys[privkey] = pubkey
+        for msg in byte_arrays:  # test every combination of message, signing key, verification key
+            for sign_privkey, _ in keys.items():
+                sig = sign_schnorr(sign_privkey, msg)
+                for verify_privkey, verify_pubkey in keys.items():
+                    if verify_privkey == sign_privkey:
+                        self.assertTrue(verify_schnorr(verify_pubkey, sig, msg))
+                        sig = list(sig)
+                        sig[random.randrange(64)] ^= (1 << (random.randrange(8)))  # damaging signature should break things
+                        sig = bytes(sig)
+                    self.assertFalse(verify_schnorr(verify_pubkey, sig, msg))
+
+    def test_schnorr_testvectors(self):
+        """Implement the BIP340 test vectors (read from bip340_test_vectors.csv)."""
+        num_tests = 0
+        vectors_file = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'bip340_test_vectors.csv')
+        with open(vectors_file, newline='', encoding='utf8') as csvfile:
+            reader = csv.reader(csvfile)
+            next(reader)
+            for row in reader:
+                (i_str, seckey_hex, pubkey_hex, aux_rand_hex, msg_hex, sig_hex, result_str, comment) = row
+                i = int(i_str)
+                pubkey = bytes.fromhex(pubkey_hex)
+                msg = bytes.fromhex(msg_hex)
+                sig = bytes.fromhex(sig_hex)
+                result = result_str == 'TRUE'
+                if seckey_hex != '':
+                    seckey = bytes.fromhex(seckey_hex)
+                    pubkey_actual = compute_xonly_pubkey(seckey)[0]
+                    self.assertEqual(pubkey.hex(), pubkey_actual.hex(), "BIP340 test vector %i (%s): pubkey mismatch" % (i, comment))
+                    aux_rand = bytes.fromhex(aux_rand_hex)
+                    try:
+                        sig_actual = sign_schnorr(seckey, msg, aux_rand)
+                        self.assertEqual(sig.hex(), sig_actual.hex(), "BIP340 test vector %i (%s): sig mismatch" % (i, comment))
+                    except RuntimeError as e:
+                        self.fail("BIP340 test vector %i (%s): signing raised exception %s" % (i, comment, e))
+                result_actual = verify_schnorr(pubkey, sig, msg)
+                if result:
+                    self.assertEqual(result, result_actual, "BIP340 test vector %i (%s): verification failed" % (i, comment))
+                else:
+                    self.assertEqual(result, result_actual, "BIP340 test vector %i (%s): verification succeeded unexpectedly" % (i, comment))
+                num_tests += 1
+        self.assertTrue(num_tests >= 15) # expect at least 15 test vectors

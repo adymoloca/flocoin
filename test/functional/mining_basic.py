@@ -24,7 +24,7 @@ from test_framework.messages import (
     ser_uint256,
 )
 from test_framework.p2p import P2PDataStore
-from test_framework.test_framework import BitcoinTestFramework
+from test_framework.test_framework import FlocoinTestFramework
 from test_framework.util import (
     assert_equal,
     assert_raises_rpc_error,
@@ -45,7 +45,7 @@ def assert_template(node, block, expect, rehash=True):
     assert_equal(rsp, expect)
 
 
-class MiningTest(BitcoinTestFramework):
+class MiningTest(FlocoinTestFramework):
     def set_test_params(self):
         self.num_nodes = 2
         self.setup_clean_chain = True

@@ -14,14 +14,14 @@
 from decimal import Decimal
 
 from test_framework.blocktools import COINBASE_MATURITY
-from test_framework.test_framework import BitcoinTestFramework
+from test_framework.test_framework import FlocoinTestFramework
 from test_framework.util import (
     assert_equal,
     assert_raises_rpc_error,
 )
 
 
-class AbandonConflictTest(BitcoinTestFramework):
+class AbandonConflictTest(FlocoinTestFramework):
     def set_test_params(self):
         self.num_nodes = 2
         self.extra_args = [["-minrelaytxfee=0.00001"], []]
@@ -52,13 +52,13 @@ class AbandonConflictTest(BitcoinTestFramework):
         # Disconnect nodes so node0's transactions don't get into node1's mempool
         self.disconnect_nodes(0, 1)
 
-        # Identify the 10btc outputs
+        # Identify the 10flo outputs
         nA = next(tx_out["vout"] for tx_out in self.nodes[0].gettransaction(txA)["details"] if tx_out["amount"] == Decimal("10"))
         nB = next(tx_out["vout"] for tx_out in self.nodes[0].gettransaction(txB)["details"] if tx_out["amount"] == Decimal("10"))
         nC = next(tx_out["vout"] for tx_out in self.nodes[0].gettransaction(txC)["details"] if tx_out["amount"] == Decimal("10"))
 
         inputs = []
-        # spend 10btc outputs from txA and txB
+        # spend 10flo outputs from txA and txB
         inputs.append({"txid": txA, "vout": nA})
         inputs.append({"txid": txB, "vout": nB})
         outputs = {}
@@ -68,7 +68,7 @@ class AbandonConflictTest(BitcoinTestFramework):
         signed = self.nodes[0].signrawtransactionwithwallet(self.nodes[0].createrawtransaction(inputs, outputs))
         txAB1 = self.nodes[0].sendrawtransaction(signed["hex"])
 
-        # Identify the 14.99998btc output
+        # Identify the 14.99998flo output
         nAB = next(tx_out["vout"] for tx_out in self.nodes[0].gettransaction(txAB1)["details"] if tx_out["amount"] == Decimal("14.99998"))
 
         #Create a child tx spending AB1 and C

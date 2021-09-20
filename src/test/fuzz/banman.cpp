@@ -110,7 +110,7 @@ FUZZ_TARGET_INIT(banman, initialize_banman)
             banmap_t banmap_read;
             ban_man_read.GetBanned(banmap_read);
             // Assert temporarily disabled to allow the remainder of the fuzz test to run while a
-            // fix is being worked on. See https://github.com/bitcoin/bitcoin/pull/22517
+            // fix is being worked on. See https://github.com/flocoin/flocoin/pull/22517
             (void)(banmap == banmap_read);
         }
     }

@@ -1,5 +1,5 @@
 ---
-name: "bitcoin-core-linux-22"
+name: "flocoin-core-linux-22"
 enable_cache: true
 distro: "ubuntu"
 suites:
@@ -41,8 +41,8 @@ packages:
 - "binutils-riscv64-linux-gnu"
 - "g++-8-riscv64-linux-gnu"
 remotes:
-- "url": "https://github.com/bitcoin/bitcoin.git"
-  "dir": "bitcoin"
+- "url": "https://github.com/floblockchain/flo.git"
+  "dir": "flocoin"
 files: []
 script: |
   set -e -o pipefail
@@ -107,7 +107,7 @@ script: |
   create_per-host_faketime_wrappers "2000-01-01 12:00:00"
   export PATH=${WRAP_DIR}:${PATH}
 
-  cd bitcoin
+  cd flocoin
   BASEPREFIX="${PWD}/depends"
   # Build dependencies for each host
   for i in $HOSTS; do
@@ -148,13 +148,13 @@ script: |
     tar --strip-components=1 -xf "${GIT_ARCHIVE}"
 
     ./autogen.sh
-    CONFIG_SITE=${BASEPREFIX}/${i}/share/config.site ./configure --prefix=/ --disable-ccache --disable-maintainer-mode --disable-dependency-tracking ${CONFIGFLAGS} CFLAGS="${HOST_CFLAGS}" CXXFLAGS="${HOST_CXXFLAGS}" LDFLAGS="${HOST_LDFLAGS}" CC=${i}-gcc-8 CXX=${i}-g++-8
+    CONFIG_SITE=${BASEPREFIX}/${i}/share/config.site ./configure --prefix=/ --with-openssl --disable-ccache --disable-maintainer-mode --disable-dependency-tracking ${CONFIGFLAGS} CFLAGS="${HOST_CFLAGS}" CXXFLAGS="${HOST_CXXFLAGS}" LDFLAGS="${HOST_LDFLAGS}" CC=${i}-gcc-8 CXX=${i}-g++-8
     make ${MAKEOPTS}
     make ${MAKEOPTS} -C src check-security
     make ${MAKEOPTS} -C src check-symbols
     make install DESTDIR=${INSTALLPATH}
     cd installed
-    find . -name "lib*.la" -delete
+    find . -name "lib*.la" -deletes
     find . -name "lib*.a" -delete
     rm -rf ${DISTNAME}/lib/pkgconfig
     find ${DISTNAME}/bin -type f -executable -print0 | xargs -0 -n1 -I{} ../contrib/devtools/split-debug.sh {} {} {}.dbg

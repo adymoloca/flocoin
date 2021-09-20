@@ -1258,9 +1258,9 @@ static RPCHelpMan gettxout()
                     {RPCResult::Type::STR_HEX, "hex", ""},
                     {RPCResult::Type::NUM, "reqSigs", /* optional */ true, "(DEPRECATED, returned only if config option -deprecatedrpc=addresses is passed) Number of required signatures"},
                     {RPCResult::Type::STR, "type", "The type, eg pubkeyhash"},
-                    {RPCResult::Type::STR, "address", /* optional */ true, "bitcoin address (only if a well-defined address exists)"},
-                    {RPCResult::Type::ARR, "addresses", /* optional */ true, "(DEPRECATED, returned only if config option -deprecatedrpc=addresses is passed) Array of bitcoin addresses",
-                        {{RPCResult::Type::STR, "address", "bitcoin address"}}},
+                    {RPCResult::Type::STR, "address", /* optional */ true, "flocoin address (only if a well-defined address exists)"},
+                    {RPCResult::Type::ARR, "addresses", /* optional */ true, "(DEPRECATED, returned only if config option -deprecatedrpc=addresses is passed) Array of flocoin addresses",
+                        {{RPCResult::Type::STR, "address", "flocoin address"}}},
                 }},
                 {RPCResult::Type::BOOL, "coinbase", "Coinbase or not"},
             }},
@@ -1353,7 +1353,7 @@ static RPCHelpMan verifychain()
     };
 }
 
-static void SoftForkDescPushBack(const CBlockIndex* active_chain_tip, UniValue& softforks, const Consensus::Params& params, Consensus::DeploymentPos dep)
+static void SoftForkDescPushBack(const CBlockIndex* active_chain_tip, UniValue& softforks, const Consensus::Params& params, Consensus::BuriedDeployment dep)
 {
     // For buried deployments.
 
@@ -1424,7 +1424,7 @@ RPCHelpMan getblockchaininfo()
                 RPCResult{
                     RPCResult::Type::OBJ, "", "",
                     {
-                        {RPCResult::Type::STR, "chain", "current network name (main, test, regtest)"},
+                        {RPCResult::Type::STR, "chain", "current network name (main, test, signet, regtest)"},
                         {RPCResult::Type::NUM, "blocks", "the height of the most-work fully-validated chain. The genesis block has height 0"},
                         {RPCResult::Type::NUM, "headers", "the current number of headers we have validated"},
                         {RPCResult::Type::STR, "bestblockhash", "the hash of the currently best block"},
@@ -1518,6 +1518,7 @@ RPCHelpMan getblockchaininfo()
     SoftForkDescPushBack(tip, softforks, consensusParams, Consensus::DEPLOYMENT_CSV);
     SoftForkDescPushBack(tip, softforks, consensusParams, Consensus::DEPLOYMENT_SEGWIT);
     SoftForkDescPushBack(tip, softforks, consensusParams, Consensus::DEPLOYMENT_TESTDUMMY);
+    SoftForkDescPushBack(tip, softforks, consensusParams, Consensus::DEPLOYMENT_TAPROOT);
     obj.pushKV("softforks", softforks);
 
     obj.pushKV("warnings", GetWarnings(false).original);
@@ -1796,7 +1797,7 @@ static RPCHelpMan reconsiderblock()
     }
 
     BlockValidationState state;
-    chainman.ActiveChainstate().ActivateBestChain(state, Params(), std::shared_ptr<const CBlock>(), true);
+    chainman.ActiveChainstate().ActivateBestChain(state, std::shared_ptr<const CBlock>());
 
     if (!state.IsValid()) {
         throw JSONRPCError(RPC_DATABASE_ERROR, state.ToString());
@@ -2590,7 +2591,7 @@ UniValue CreateUTXOSnapshot(NodeContext& node, CChainState& chainstate, CAutoFil
         // use below this block.
         //
         // See discussion here:
-        //   https://github.com/bitcoin/bitcoin/pull/15606#discussion_r274479369
+        //   https://github.com/flocoin/flocoin/pull/15606#discussion_r274479369
         //
         LOCK(::cs_main);
 

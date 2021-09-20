@@ -1,5 +1,4 @@
 // Copyright (c) 2009-2020 The Bitcoin Core developers
-// Copyright (c) Flo Developers 2013-2021
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -261,6 +260,7 @@ int ParseSighashString(const UniValue& sighash)
     int hash_type = SIGHASH_ALL;
     if (!sighash.isNull()) {
         static std::map<std::string, int> map_sighash_values = {
+            {std::string("DEFAULT"), int(SIGHASH_DEFAULT)},
             {std::string("ALL"), int(SIGHASH_ALL)},
             {std::string("ALL|ANYONECANPAY"), int(SIGHASH_ALL|SIGHASH_ANYONECANPAY)},
             {std::string("NONE"), int(SIGHASH_NONE)},

@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 # Copyright (c) 2016-2020 The Bitcoin Core developers
-# Copyright (c) Flo Developers 2013-2021
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 """Test the dumpwallet RPC."""
@@ -8,7 +7,7 @@ import datetime
 import os
 import time
 
-from test_framework.test_framework import BitcoinTestFramework
+from test_framework.test_framework import FlocoinTestFramework
 from test_framework.util import (
     assert_equal,
     assert_raises_rpc_error,
@@ -74,7 +73,7 @@ def read_dump(file_name, addrs, script_addrs, hd_master_addr_old):
                         elif addr.startswith('2'):
                             # P2SH-segwit address
                             found_p2sh_segwit_addr += 1
-                        elif addr.startswith('flort1'):
+                        elif addr.startswith('bcrt1'):
                             found_bech32_addr += 1
                         break
                     elif keytype == "change=1":
@@ -93,7 +92,7 @@ def read_dump(file_name, addrs, script_addrs, hd_master_addr_old):
         return found_comments, found_legacy_addr, found_p2sh_segwit_addr, found_bech32_addr, found_script_addr, found_addr_chg, found_addr_rsv, hd_master_addr_ret
 
 
-class WalletDumpTest(BitcoinTestFramework):
+class WalletDumpTest(FlocoinTestFramework):
     def set_test_params(self):
         self.num_nodes = 1
         self.extra_args = [["-keypool=90", "-addresstype=legacy"]]
@@ -211,7 +210,7 @@ class WalletDumpTest(BitcoinTestFramework):
             self.nodes[0].getnewaddress()
 
         # Make sure that dumpwallet doesn't have a lock order issue when there is an unconfirmed tx and it is reloaded
-        # See https://github.com/bitcoin/bitcoin/issues/22489
+        # See https://github.com/flocoin/flocoin/issues/22489
         self.nodes[0].createwallet("w3")
         w3 = self.nodes[0].get_wallet_rpc("w3")
         w3.importprivkey(privkey=self.nodes[0].get_deterministic_priv_key().key, label="coinbase_import")

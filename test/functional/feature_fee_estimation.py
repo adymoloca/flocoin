@@ -23,7 +23,7 @@ from test_framework.script import (
 from test_framework.script_util import (
     script_to_p2sh_script,
 )
-from test_framework.test_framework import BitcoinTestFramework
+from test_framework.test_framework import FlocoinTestFramework
 from test_framework.util import (
     assert_equal,
     assert_greater_than,
@@ -154,7 +154,7 @@ def check_estimates(node, fees_seen):
     check_raw_estimates(node, fees_seen)
     check_smart_estimates(node, fees_seen)
 
-class EstimateFeeTest(BitcoinTestFramework):
+class EstimateFeeTest(FlocoinTestFramework):
     def set_test_params(self):
         self.num_nodes = 3
         # mine non-standard txs (e.g. txs with "dust" outputs)

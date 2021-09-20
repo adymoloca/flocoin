@@ -1,9 +1,8 @@
 #!/usr/bin/env python3
 # Copyright (c) 2016-2020 The Bitcoin Core developers
-# Copyright (c) Flo Developers 2013-2021
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
-"""Encode and decode Bitcoin addresses.
+"""Encode and decode Flocoin addresses.
 
 - base58 P2PKH and P2SH addresses.
 - bech32 segwit v0 P2WPKH and P2WSH addresses."""
@@ -15,10 +14,10 @@ from .script import hash256, hash160, sha256, CScript, OP_0
 from .segwit_addr import encode_segwit_address
 from .util import assert_equal, hex_str_to_bytes
 
-ADDRESS_BCRT1_UNSPENDABLE = 'flort1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq3xueyj'
-ADDRESS_BCRT1_UNSPENDABLE_DESCRIPTOR = 'addr(flort1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq3xueyj)#juyq9d97'
+ADDRESS_BCRT1_UNSPENDABLE = 'bcrt1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq3xueyj'
+ADDRESS_BCRT1_UNSPENDABLE_DESCRIPTOR = 'addr(bcrt1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq3xueyj)#juyq9d97'
 # Coins sent to this address can be spent with a witness stack of just OP_TRUE
-ADDRESS_BCRT1_P2WSH_OP_TRUE = 'flort1qft5p2uhsdcdc3l2ua4ap5qqfg4pjaqlp250x7us7a8qqhrxrxfsqseac85'
+ADDRESS_BCRT1_P2WSH_OP_TRUE = 'bcrt1qft5p2uhsdcdc3l2ua4ap5qqfg4pjaqlp250x7us7a8qqhrxrxfsqseac85'
 
 
 class AddressType(enum.Enum):
@@ -105,7 +104,7 @@ def program_to_witness(version, program, main=False):
     assert 0 <= version <= 16
     assert 2 <= len(program) <= 40
     assert version > 0 or len(program) in [20, 32]
-    return encode_segwit_address("floc" if main else "flort", version, program)
+    return encode_segwit_address("bc" if main else "bcrt", version, program)
 
 def script_to_p2wsh(script, main=False):
     script = check_script(script)

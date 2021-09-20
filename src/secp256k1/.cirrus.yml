@@ -10,6 +10,7 @@ env:
   HOST:
   ECDH: no
   RECOVERY: no
+  SCHNORRSIG: no
   EXPERIMENTAL: no
   CTIMETEST: yes
   BENCH: yes
@@ -52,8 +53,12 @@ task:
     memory: 1G
   matrix: &ENV_MATRIX
     - env: {WIDEMUL:  int64,  RECOVERY: yes}
+    - env: {WIDEMUL:  int64,                 ECDH: yes, EXPERIMENTAL: yes, SCHNORRSIG: yes}
     - env: {WIDEMUL: int128}
+    - env: {WIDEMUL: int128,  RECOVERY: yes,            EXPERIMENTAL: yes, SCHNORRSIG: yes}
+    - env: {WIDEMUL: int128,                 ECDH: yes, EXPERIMENTAL: yes, SCHNORRSIG: yes}
     - env: {WIDEMUL: int128,  ASM: x86_64}
+    - env: {                  RECOVERY: yes,            EXPERIMENTAL: yes, SCHNORRSIG: yes}
     - env: {                  STATICPRECOMPUTATION: no}
     - env: {BUILD: distcheck, WITH_VALGRIND: no, CTIMETEST: no, BENCH: no}
     - env: {CPPFLAGS: -DDETERMINISTIC}
@@ -66,6 +71,7 @@ task:
         ECDH: yes
         RECOVERY: yes
         EXPERIMENTAL: yes
+        SCHNORRSIG: yes
         CTIMETEST: no
     - env: { ECMULTGENPRECISION: 2 }
     - env: { ECMULTGENPRECISION: 8 }
@@ -75,6 +81,7 @@ task:
         ECDH: yes
         RECOVERY: yes
         EXPERIMENTAL: yes
+        SCHNORRSIG: yes
         EXTRAFLAGS: "--disable-openssl-tests"
         BUILD:
   matrix:
@@ -98,6 +105,7 @@ task:
     ECDH: yes
     RECOVERY: yes
     EXPERIMENTAL: yes
+    SCHNORRSIG: yes
   matrix:
     - env:
         CC: i686-linux-gnu-gcc
@@ -180,6 +188,7 @@ task:
     ECDH: yes
     RECOVERY: yes
     EXPERIMENTAL: yes
+    SCHNORRSIG: yes
     CTIMETEST: no
   << : *MERGE_BASE
   test_script:

@@ -3,7 +3,8 @@ Unauthenticated REST Interface
 
 The REST API can be enabled with the `-rest` option.
 
-The interface runs on the same port as the JSON-RPC interface, by default port 8332 for mainnet, port 18332 for testnet and port 18443 for regtest.
+The interface runs on the same port as the JSON-RPC interface, by default port 8332 for mainnet, port 18332 for testnet,
+port 38332 for signet, and port 18443 for regtest.
 
 REST Interface consistency guarantees
 -------------------------------------
@@ -61,7 +62,7 @@ Given a height: returns hash of block in best-block-chain at height provided.
 
 Returns various state info regarding block chain processing.
 Only supports JSON as output format.
-* chain : (string) current network name (main, test, regtest)
+* chain : (string) current network name (main, test, signet, regtest)
 * blocks : (numeric) the current number of blocks processed in the server
 * headers : (numeric) the current number of headers we have validated
 * bestblockhash : (string) the hash of the currently best block
@@ -78,7 +79,7 @@ Only supports JSON as output format.
 
 The getutxo command allows querying of the UTXO set given a set of outpoints.
 See BIP64 for input and output serialisation:
-https://github.com/bitcoin/bips/blob/master/bip-0064.mediawiki
+https://github.com/flocoin/bips/blob/master/bip-0064.mediawiki
 
 Example:
 ```
@@ -116,4 +117,4 @@ Only supports JSON as output format.
 
 Risks
 -------------
-Running a web browser on the same node with a REST enabled bitcoind can be a risk. Accessing prepared XSS websites could read out tx/block data of your node by placing links like `<script src="http://127.0.0.1:8332/rest/tx/1234567890.json">` which might break the nodes privacy.
+Running a web browser on the same node with a REST enabled flocoind can be a risk. Accessing prepared XSS websites could read out tx/block data of your node by placing links like `<script src="http://127.0.0.1:8332/rest/tx/1234567890.json">` which might break the nodes privacy.

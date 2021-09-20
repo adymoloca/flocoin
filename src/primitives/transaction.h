@@ -4,8 +4,8 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#ifndef BITCOIN_PRIMITIVES_TRANSACTION_H
-#define BITCOIN_PRIMITIVES_TRANSACTION_H
+#ifndef FLOCOIN_PRIMITIVES_TRANSACTION_H
+#define FLOCOIN_PRIMITIVES_TRANSACTION_H
 
 #include <stdint.h>
 #include <amount.h>
@@ -255,7 +255,7 @@ inline void SerializeTransaction(const TxType& tx, Stream& s) {
     }
     s << tx.nLockTime;
     if (tx.nVersion >= 2) {
-        s >> tx.strFloData;
+        s << tx.strFloData;
     }
 }
 
@@ -268,6 +268,8 @@ class CTransaction
 public:
     // Default transaction version.
     static const int32_t CURRENT_VERSION=2;
+
+    static const int32_t MAX_FLO_DATA_SIZE=1040;
 
     // The local variables are made const to prevent unintended modification
     // without updating the cached hash value. However, CTransaction is not
@@ -408,4 +410,4 @@ public:
     friend bool operator<(const GenTxid& a, const GenTxid& b) { return std::tie(a.m_is_wtxid, a.m_hash) < std::tie(b.m_is_wtxid, b.m_hash); }
 };
 
-#endif // BITCOIN_PRIMITIVES_TRANSACTION_H
+#endif // FLOCOIN_PRIMITIVES_TRANSACTION_H

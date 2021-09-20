@@ -1,5 +1,4 @@
 // Copyright (c) 2021 The Bitcoin Core developers
-// Copyright (c) Flo Developers 2013-2021
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -326,6 +325,9 @@ CTxDestination ConsumeTxDestination(FuzzedDataProvider& fuzzed_data_provider) no
         },
         [&] {
             tx_destination = WitnessV0KeyHash{ConsumeUInt160(fuzzed_data_provider)};
+        },
+        [&] {
+            tx_destination = WitnessV1Taproot{XOnlyPubKey{ConsumeUInt256(fuzzed_data_provider)}};
         },
         [&] {
             WitnessUnknown witness_unknown{};

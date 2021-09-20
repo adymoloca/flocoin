@@ -4,7 +4,7 @@
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 #ifdef HAVE_CONFIG_H
-#include <config/bitcoin-config.h>
+#include <config/flocoin-config.h>
 #endif
 
 #include <qt/walletmodeltransaction.h>

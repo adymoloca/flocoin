@@ -4,6 +4,7 @@ $(package)_download_path=https://download.qt.io/official_releases/qt/5.12/$($(pa
 $(package)_suffix=everywhere-src-$($(package)_version).tar.xz
 $(package)_file_name=qtbase-$($(package)_suffix)
 $(package)_sha256_hash=1c1b4e33137ca77881074c140d54c3c9747e845a31338cfe8680f171f0bc3a39
+$(package)_dependencies=openssl
 $(package)_linux_dependencies=freetype fontconfig libxcb libxkbcommon
 $(package)_qt_libs=corelib network widgets gui plugins testlib
 $(package)_linguist_tools = lrelease lupdate lconvert
@@ -48,7 +49,6 @@ $(package)_config_opts += -no-libjpeg
 $(package)_config_opts += -no-libproxy
 $(package)_config_opts += -no-libudev
 $(package)_config_opts += -no-mtdev
-$(package)_config_opts += -no-openssl
 $(package)_config_opts += -no-openvg
 $(package)_config_opts += -no-reduce-relocations
 $(package)_config_opts += -no-sctp
@@ -68,6 +68,7 @@ $(package)_config_opts += -nomake examples
 $(package)_config_opts += -nomake tests
 $(package)_config_opts += -nomake tools
 $(package)_config_opts += -opensource
+$(package)_config_opts += -openssl-linked
 $(package)_config_opts += -pkg-config
 $(package)_config_opts += -prefix $(host_prefix)
 $(package)_config_opts += -qt-libpng
@@ -138,14 +139,14 @@ $(package)_config_opts_linux += -fontconfig
 $(package)_config_opts_linux += -no-opengl
 $(package)_config_opts_linux += -no-feature-vulkan
 $(package)_config_opts_linux += -dbus-runtime
-$(package)_config_opts_arm_linux += -platform linux-g++ -xplatform bitcoin-linux-g++
+$(package)_config_opts_arm_linux += -platform linux-g++ -xplatform flocoin-linux-g++
 $(package)_config_opts_i686_linux  = -xplatform linux-g++-32
 $(package)_config_opts_x86_64_linux = -xplatform linux-g++-64
 $(package)_config_opts_aarch64_linux = -xplatform linux-aarch64-gnu-g++
-$(package)_config_opts_powerpc64_linux = -platform linux-g++ -xplatform bitcoin-linux-g++
-$(package)_config_opts_powerpc64le_linux = -platform linux-g++ -xplatform bitcoin-linux-g++
-$(package)_config_opts_riscv64_linux = -platform linux-g++ -xplatform bitcoin-linux-g++
-$(package)_config_opts_s390x_linux = -platform linux-g++ -xplatform bitcoin-linux-g++
+$(package)_config_opts_powerpc64_linux = -platform linux-g++ -xplatform flocoin-linux-g++
+$(package)_config_opts_powerpc64le_linux = -platform linux-g++ -xplatform flocoin-linux-g++
+$(package)_config_opts_riscv64_linux = -platform linux-g++ -xplatform flocoin-linux-g++
+$(package)_config_opts_s390x_linux = -platform linux-g++ -xplatform flocoin-linux-g++
 
 $(package)_config_opts_mingw32 = -no-opengl
 $(package)_config_opts_mingw32 += -no-dbus
@@ -206,7 +207,7 @@ endef
 # 2. Create a macOS-Clang-Linux mkspec using our mac-qmake.conf.
 #
 # 3. After making a copy of the mkspec for the linux-arm-gnueabi host, named
-# bitcoin-linux-g++, replace instances of linux-arm-gnueabi with $(host). This
+# flocoin-linux-g++, replace instances of linux-arm-gnueabi with $(host). This
 # way we can generically support hosts like riscv64-linux-gnu, which Qt doesn't
 # ship a mkspec for. See it's usage in config_opts_* above.
 #
@@ -235,8 +236,8 @@ define $(package)_preprocess_cmds
   mkdir -p qtbase/mkspecs/macx-clang-linux &&\
   cp -f qtbase/mkspecs/macx-clang/qplatformdefs.h qtbase/mkspecs/macx-clang-linux/ &&\
   cp -f $($(package)_patch_dir)/mac-qmake.conf qtbase/mkspecs/macx-clang-linux/qmake.conf && \
-  cp -r qtbase/mkspecs/linux-arm-gnueabi-g++ qtbase/mkspecs/bitcoin-linux-g++ && \
-  sed -i.old "s/arm-linux-gnueabi-/$(host)-/g" qtbase/mkspecs/bitcoin-linux-g++/qmake.conf && \
+  cp -r qtbase/mkspecs/linux-arm-gnueabi-g++ qtbase/mkspecs/flocoin-linux-g++ && \
+  sed -i.old "s/arm-linux-gnueabi-/$(host)-/g" qtbase/mkspecs/flocoin-linux-g++/qmake.conf && \
   echo "!host_build: QMAKE_CFLAGS     += $($(package)_cflags) $($(package)_cppflags)" >> qtbase/mkspecs/common/gcc-base.conf && \
   echo "!host_build: QMAKE_CXXFLAGS   += $($(package)_cxxflags) $($(package)_cppflags)" >> qtbase/mkspecs/common/gcc-base.conf && \
   echo "!host_build: QMAKE_LFLAGS     += $($(package)_ldflags)" >> qtbase/mkspecs/common/gcc-base.conf && \
@@ -250,7 +251,7 @@ define $(package)_config_cmds
   export PKG_CONFIG_LIBDIR=$(host_prefix)/lib/pkgconfig && \
   export PKG_CONFIG_PATH=$(host_prefix)/share/pkgconfig && \
   cd qtbase && \
-  ./configure -top-level $($(package)_config_opts)
+  ./configure -top-level $($(package)_config_opts) --with-openssl
 endef
 
 define $(package)_build_cmds

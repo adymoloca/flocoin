@@ -1,5 +1,4 @@
 // Copyright (c) 2014-2019 The Bitcoin Core developers
-// Copyright (c) Flo Developers 2013-2021
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -18,9 +17,10 @@ static const struct {
     const int iconColorHueShift;
     const int iconColorSaturationReduction;
 } network_styles[] = {
-    {"main", QAPP_APP_NAME_DEFAULT, 0, 0, ""},
-    {"test", QAPP_APP_NAME_TESTNET, 0, 0, QT_TRANSLATE_NOOP("SplashScreen", "[testnet]")},
-    {"regtest", QAPP_APP_NAME_REGTEST, 60, 1, "[regtest]"},
+    {"main", QAPP_APP_NAME_DEFAULT, 0, 0},
+    {"test", QAPP_APP_NAME_TESTNET, 70, 30},
+    {"signet", QAPP_APP_NAME_SIGNET, 35, 15},
+    {"regtest", QAPP_APP_NAME_REGTEST, 160, 30},
 };
 
 // titleAddText needs to be const char* for tr()
@@ -29,7 +29,7 @@ NetworkStyle::NetworkStyle(const QString &_appName, const int iconColorHueShift,
     titleAddText(qApp->translate("SplashScreen", _titleAddText))
 {
     // load pixmap
-    QPixmap pixmap(":/icons/bitcoin");
+    QPixmap pixmap(":/icons/flocoin");
 
     if(iconColorHueShift != 0 && iconColorSaturationReduction != 0)
     {

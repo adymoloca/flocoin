@@ -4,11 +4,11 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#ifndef BITCOIN_VALIDATION_H
-#define BITCOIN_VALIDATION_H
+#ifndef FLOCOIN_VALIDATION_H
+#define FLOCOIN_VALIDATION_H
 
 #if defined(HAVE_CONFIG_H)
-#include <config/bitcoin-config.h>
+#include <config/flocoin-config.h>
 #endif
 
 #include <amount.h>
@@ -58,6 +58,7 @@ struct ChainTxData;
 struct DisconnectedBlockTransactions;
 struct PrecomputedTransactionData;
 struct LockPoints;
+struct AssumeutxoData;
 
 /** Default for -minrelaytxfee, minimum relay fee for transactions */
 static const unsigned int DEFAULT_MIN_RELAY_TX_FEE = 1000;
@@ -714,7 +715,7 @@ public:
      */
     bool ActivateBestChain(
         BlockValidationState& state,
-        std::shared_ptr<const CBlock> pblock = nullptr, bool reconsider=false) LOCKS_EXCLUDED(cs_main);
+        std::shared_ptr<const CBlock> pblock = nullptr, bool reconsider = false) LOCKS_EXCLUDED(cs_main);
 
     bool AcceptBlock(const std::shared_ptr<const CBlock>& pblock, BlockValidationState& state, CBlockIndex** ppindex, bool fRequested, const FlatFilePos* dbp, bool* fNewBlock) EXCLUSIVE_LOCKS_REQUIRED(cs_main);
 
@@ -777,7 +778,7 @@ public:
     std::string ToString() EXCLUSIVE_LOCKS_REQUIRED(::cs_main);
 
 private:
-    bool ActivateBestChainStep(BlockValidationState& state, CBlockIndex* pindexMostWork, const std::shared_ptr<const CBlock>& pblock, bool& fInvalidFound, ConnectTrace& connectTrace) EXCLUSIVE_LOCKS_REQUIRED(cs_main, m_mempool->cs);
+    bool ActivateBestChainStep(BlockValidationState& state, CBlockIndex* pindexMostWork, const std::shared_ptr<const CBlock>& pblock, bool& fInvalidFound, ConnectTrace& connectTrace, bool reconsider) EXCLUSIVE_LOCKS_REQUIRED(cs_main, m_mempool->cs);
     bool ConnectTip(BlockValidationState& state, CBlockIndex* pindexNew, const std::shared_ptr<const CBlock>& pblock, ConnectTrace& connectTrace, DisconnectedBlockTransactions& disconnectpool) EXCLUSIVE_LOCKS_REQUIRED(cs_main, m_mempool->cs);
 
     void InvalidBlockFound(CBlockIndex* pindex, const BlockValidationState& state) EXCLUSIVE_LOCKS_REQUIRED(cs_main);
@@ -1051,5 +1052,6 @@ bool LoadMempool(CTxMemPool& pool, CChainState& active_chainstate, FopenFn mocka
  *
  * @returns empty if no assumeutxo configuration exists for the given height.
  */
+const AssumeutxoData* ExpectedAssumeutxo(const int height, const CChainParams& params);
 
-#endif // BITCOIN_VALIDATION_H
+#endif // FLOCOIN_VALIDATION_H

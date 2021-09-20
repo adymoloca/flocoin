@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 # Copyright (c) 2014-2020 The Bitcoin Core developers
-# Copyright (c) Flo Developers 2013-2021
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 """Test RPCs related to blockchainstate.
@@ -36,7 +35,7 @@ from test_framework.messages import (
     msg_block,
 )
 from test_framework.p2p import P2PInterface
-from test_framework.test_framework import BitcoinTestFramework
+from test_framework.test_framework import FlocoinTestFramework
 from test_framework.util import (
     assert_equal,
     assert_greater_than,
@@ -50,7 +49,7 @@ from test_framework.util import (
 from test_framework.wallet import MiniWallet
 
 
-class BlockchainTest(BitcoinTestFramework):
+class BlockchainTest(FlocoinTestFramework):
     def set_test_params(self):
         self.setup_clean_chain = True
         self.num_nodes = 1
@@ -156,6 +155,18 @@ class BlockchainTest(BitcoinTestFramework):
                     'min_activation_height': 0,
                 },
                 'active': False
+            },
+            'taproot': {
+                'type': 'bip9',
+                'bip9': {
+                    'status': 'active',
+                    'start_time': -1,
+                    'timeout': 9223372036854775807,
+                    'since': 0,
+                    'min_activation_height': 0,
+                },
+                'height': 0,
+                'active': True
             }
         })
 

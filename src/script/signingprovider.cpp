@@ -1,6 +1,5 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
 // Copyright (c) 2009-2020 The Bitcoin Core developers
-// Copyright (c) Flo Developers 2013-2021
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -45,6 +44,11 @@ bool HidingSigningProvider::GetKeyOrigin(const CKeyID& keyid, KeyOriginInfo& inf
     return m_provider->GetKeyOrigin(keyid, info);
 }
 
+bool HidingSigningProvider::GetTaprootSpendData(const XOnlyPubKey& output_key, TaprootSpendData& spenddata) const
+{
+    return m_provider->GetTaprootSpendData(output_key, spenddata);
+}
+
 bool FlatSigningProvider::GetCScript(const CScriptID& scriptid, CScript& script) const { return LookupHelper(scripts, scriptid, script); }
 bool FlatSigningProvider::GetPubKey(const CKeyID& keyid, CPubKey& pubkey) const { return LookupHelper(pubkeys, keyid, pubkey); }
 bool FlatSigningProvider::GetKeyOrigin(const CKeyID& keyid, KeyOriginInfo& info) const
@@ -55,6 +59,10 @@ bool FlatSigningProvider::GetKeyOrigin(const CKeyID& keyid, KeyOriginInfo& info)
     return ret;
 }
 bool FlatSigningProvider::GetKey(const CKeyID& keyid, CKey& key) const { return LookupHelper(keys, keyid, key); }
+bool FlatSigningProvider::GetTaprootSpendData(const XOnlyPubKey& output_key, TaprootSpendData& spenddata) const
+{
+    return LookupHelper(tr_spenddata, output_key, spenddata);
+}
 
 FlatSigningProvider Merge(const FlatSigningProvider& a, const FlatSigningProvider& b)
 {

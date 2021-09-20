@@ -1,0 +1,33 @@
+# /etc/conf.d/flocoind: config file for /etc/init.d/flocoind
+
+# Config file location
+#FLOCOIND_CONFIGFILE="/etc/flocoin/flocoin.conf"
+
+# What directory to write pidfile to?  (created and owned by $FLOCOIND_USER)
+#FLOCOIND_PIDDIR="/var/run/flocoind"
+
+# What filename to give the pidfile
+#FLOCOIND_PIDFILE="${FLOCOIND_PIDDIR}/flocoind.pid"
+
+# Where to write flocoind data (be mindful that the blockchain is large)
+#FLOCOIND_DATADIR="/var/lib/flocoind"
+
+# User and group to own flocoind process
+#FLOCOIND_USER="flocoin"
+#FLOCOIND_GROUP="flocoin"
+
+# Path to flocoind executable
+#FLOCOIND_BIN="/usr/bin/flocoind"
+
+# Nice value to run flocoind under
+#FLOCOIND_NICE=0
+
+# Additional options (avoid -conf and -datadir, use flags above)
+#FLOCOIND_OPTS=""
+
+# The timeout in seconds OpenRC will wait for flocoind to terminate
+# after a SIGTERM has been raised.
+# Note that this will be mapped as argument to start-stop-daemon's
+# '--retry' option, which means you can specify a retry schedule
+# here. For more information see man 8 start-stop-daemon.
+FLOCOIND_SIGTERM_TIMEOUT=600
