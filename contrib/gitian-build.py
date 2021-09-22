@@ -27,9 +27,9 @@ def setup():
         programs += ['apt-cacher-ng', 'lxc', 'debootstrap']
     subprocess.check_call(['sudo', 'apt-get', 'install', '-qq'] + programs)
     if not os.path.isdir('gitian.sigs'):
-        subprocess.check_call(['git', 'clone', 'https://github.com/floblockchain/gitian.sigs.flo.git'])
+        subprocess.check_call(['git', 'clone', 'https://github.com/adymoloca/gitian.flo.sigs.git'])
     if not os.path.isdir('flocoin-detached-sigs'):
-        subprocess.check_call(['git', 'clone', 'https://github.com/floblockchain/flo-detached-sigs.git'])
+        subprocess.check_call(['git', 'clone', 'https://github.com/adymoloca/flocoin-detached-sigs.git'])
     if not os.path.isdir('gitian-builder'):
         subprocess.check_call(['git', 'clone', 'https://github.com/devrandom/gitian-builder.git'])
     if not os.path.isdir('flocoin'):
