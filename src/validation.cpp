@@ -571,7 +571,7 @@ bool MemPoolAccept::PreChecks(ATMPArgs& args, Workspace& ws)
         return state.Invalid(TxValidationResult::TX_NOT_STANDARD, reason);
 
     if (tx.strFloData.length() > CTransaction::MAX_FLO_DATA_SIZE) {
-        return state.Invalid(TxValidationResult::TX_NOT_STANDARD, "flo-data-too-large");
+        return state.Invalid(TxValidationResult::TX_CONSENSUS, "flo-data-too-large");
     }
     
     // Do not work on transactions that are too small.
