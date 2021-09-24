@@ -1,3 +1,3 @@
 [submodule "contrib/flocoin"] 
   path = ./contrib/flocoin
-  url = git://https://github.com/adymoloca/flocoin
+  url = https://www.github.com/adymoloca/flocoin
