@@ -1365,7 +1365,7 @@ public:
         ::Serialize(s, txTo.nLockTime);
         // Serialize strFloData
         if (txTo.nVersion >= 2 && fOmitFloData == 0)
-        	 ::Serialize(s, txTo.strFloData);s
+        	 ::Serialize(s, txTo.strFloData);
     }
 };
 
