@@ -1334,9 +1334,6 @@ public:
             ::Serialize(s, (int)0);
         else
             ::Serialize(s, txTo.vin[nInput].nSequence);
-        // Serialize strFloData
-        if (txTo.nVersion >= 2 && fOmitFloData == 0)
-        	 ::Serialize(s, txTo.strFloData);
     }
 
     /** Serialize an output of txTo */
@@ -1366,6 +1363,9 @@ public:
              SerializeOutput(s, nOutput);
         // Serialize nLockTime
         ::Serialize(s, txTo.nLockTime);
+        // Serialize strFloData
+        if (txTo.nVersion >= 2 && fOmitFloData == 0)
+        	 ::Serialize(s, txTo.strFloData);
     }
 };
 
