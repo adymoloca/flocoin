@@ -1334,7 +1334,7 @@ void UpdateCoins(const CTransaction& tx, CCoinsViewCache& inputs, int nHeight)
 bool CScriptCheck::operator()() {
     const CScript &scriptSig = ptxTo->vin[nIn].scriptSig;
     const CScriptWitness *witness = &ptxTo->vin[nIn].scriptWitness;
-    return VerifyScript(scriptSig, m_tx_out.scriptPubKey, witness, nFlags, CachingTransactionSignatureChecker(ptxTo, nIn, m_tx_out.nValue, cacheStore, *txdata), &error);
+    return VerifyScript(scriptSig, scriptPubKey, witness, nFlags, CachingTransactionSignatureChecker(ptxTo, nIn, amount, cacheStore, *txdata), &error);
 }
 
 int BlockManager::GetSpendHeight(const CCoinsViewCache& inputs)
@@ -1347,6 +1347,7 @@ int BlockManager::GetSpendHeight(const CCoinsViewCache& inputs)
 
 static CuckooCache::cache<uint256, SignatureCacheHasher> g_scriptExecutionCache;
 static CSHA256 g_scriptExecutionCacheHasher;
+static uint256 scriptExecutionCacheNonce(GetRandHash());
 
 void InitScriptExecutionCache() {
     // Setup the salted hasher
@@ -1400,37 +1401,42 @@ bool CheckInputScripts(const CTransaction& tx, TxValidationState& state,
     // properly commits to the scriptPubKey in the inputs view of that
     // transaction).
     uint256 hashCacheEntry;
-    CSHA256 hasher = g_scriptExecutionCacheHasher;
-    hasher.Write(tx.GetWitnessHash().begin(), 32).Write((unsigned char*)&flags, sizeof(flags)).Finalize(hashCacheEntry.begin());
+    static_assert(55 - sizeof(flags) - 32 >= 128/8, "Want at least 128 bits of nonce for script execution cache");
+    CSHA256().Write(scriptExecutionCacheNonce.begin(), 55 - sizeof(flags) - 32).Write(tx.GetWitnessHash().begin(), 32).Write((unsigned char*)&flags, sizeof(flags)).Finalize(hashCacheEntry.begin());
     AssertLockHeld(cs_main); //TODO: Remove this requirement by making CuckooCache not require external locks
     if (g_scriptExecutionCache.contains(hashCacheEntry, !cacheFullScriptStore)) {
         return true;
     }
 
-    if (!txdata.m_spent_outputs_ready) {
-        std::vector<CTxOut> spent_outputs;
-        spent_outputs.reserve(tx.vin.size());
+    // if (!txdata.m_spent_outputs_ready) {
+    //     std::vector<CTxOut> spent_outputs;
+    //     spent_outputs.reserve(tx.vin.size());
 
-        for (const auto& txin : tx.vin) {
-            const COutPoint& prevout = txin.prevout;
-            const Coin& coin = inputs.AccessCoin(prevout);
-            assert(!coin.IsSpent());
-            spent_outputs.emplace_back(coin.out);
-        }
-        txdata.Init(tx, std::move(spent_outputs));
-    }
-    assert(txdata.m_spent_outputs.size() == tx.vin.size());
+    //     for (const auto& txin : tx.vin) {
+    //         const COutPoint& prevout = txin.prevout;
+    //         const Coin& coin = inputs.AccessCoin(prevout);
+    //         assert(!coin.IsSpent());
+    //         spent_outputs.emplace_back(coin.out);
+    //     }
+    //     txdata.Init(tx, std::move(spent_outputs));
+    // }
+    // assert(txdata.m_spent_outputs.size() == tx.vin.size());
 
     for (unsigned int i = 0; i < tx.vin.size(); i++) {
+        const COutPoint &prevout = tx.vin[i].prevout;
+        const Coin& coin = inputs.AccessCoin(prevout);
+        assert(!coin.IsSpent());
 
         // We very carefully only pass in things to CScriptCheck which
         // are clearly committed to by tx' witness hash. This provides
         // a sanity check that our caching is not introducing consensus
         // failures through additional data in, eg, the coins being
         // spent being checked as a part of CScriptCheck.
+        const CScript& scriptPubKey = coin.out.scriptPubKey;
+        const CAmount amount = coin.out.nValue;
 
         // Verify signature
-        CScriptCheck check(txdata.m_spent_outputs[i], tx, i, flags, cacheSigStore, &txdata);
+        CScriptCheck check(scriptPubKey, amount, tx, i, flags, cacheSigStore, &txdata);
         if (pvChecks) {
             pvChecks->push_back(CScriptCheck());
             check.swap(pvChecks->back());
@@ -1444,7 +1450,7 @@ bool CheckInputScripts(const CTransaction& tx, TxValidationState& state,
                 // splitting the network between upgraded and
                 // non-upgraded nodes by banning CONSENSUS-failing
                 // data providers.
-                CScriptCheck check2(txdata.m_spent_outputs[i], tx, i,
+                CScriptCheck check2(scriptPubKey, amount, tx, i,
                         flags & ~STANDARD_NOT_MANDATORY_VERIFY_FLAGS, cacheSigStore, &txdata);
                 if (check2())
                     return state.Invalid(TxValidationResult::TX_NOT_STANDARD, strprintf("non-mandatory-script-verify-flag (%s)", ScriptErrorString(check.GetScriptError())));
