@@ -33,7 +33,7 @@ script: |
   cd osslsigncode-2.0
 
   ./autogen.sh
-  ./configure --without-gsf --without-curl --disable-dependency-tracking
+  ./configure --with-openssl --without-gsf --without-curl --disable-dependency-tracking
   make
   find ${UNSIGNED_DIR} -name "*-unsigned.exe" | while read i; do
     INFILE="$(basename "${i}")"
