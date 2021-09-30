@@ -183,7 +183,7 @@ def main():
 
     # Ensure no more than one environment variable for gitian-builder (USE_LXC, USE_VBOX, USE_DOCKER) is set as they
     # can interfere (e.g., USE_LXC being set shadows USE_DOCKER; for details see gitian-builder/libexec/make-clean-vm).
-    os.environ['USE_LXC'] = '1'
+    os.environ['USE_LXC'] = ''
     os.environ['USE_VBOX'] = ''
     os.environ['USE_DOCKER'] = ''
     if args.docker:
@@ -191,9 +191,9 @@ def main():
     elif not args.kvm:
         os.environ['USE_LXC'] = '1'
         if 'GITIAN_HOST_IP' not in os.environ.keys():
-            os.environ['GITIAN_HOST_IP'] = '10.0.3.1'
+            os.environ['GITIAN_HOST_IP'] = '10.0.2.2'
         if 'LXC_GUEST_IP' not in os.environ.keys():
-            os.environ['LXC_GUEST_IP'] = '10.0.3.5'
+            os.environ['LXC_GUEST_IP'] = '10.0.2.5'
 
     if args.setup:
         setup()
