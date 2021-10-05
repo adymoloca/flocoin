@@ -78,7 +78,7 @@ script: |
   done
   }
 
-  pip install lief
+  pip3 install lief
 
   # Faketime for depends so intermediate results are comparable
   export PATH_orig=${PATH}
