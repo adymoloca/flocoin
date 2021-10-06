@@ -78,7 +78,8 @@ script: |
   done
   }
 
-  pip3 install lief
+  sudo -H python3 -m pip install --upgrade --force-reinstall pip
+  sudo -H pip3 install lief
 
   # Faketime for depends so intermediate results are comparable
   export PATH_orig=${PATH}
