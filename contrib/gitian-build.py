@@ -35,7 +35,7 @@ def setup():
     if not os.path.isdir('flocoin'):
         subprocess.check_call(['git', 'clone', 'https://github.com/adymoloca/flocoin.git'])
     os.chdir('gitian-builder')
-    make_image_prog = ['bin/make-base-vm', '--suite', 'trusty', '--arch', 'amd64']
+    make_image_prog = ['bin/make-base-vm', '--suite', 'focal', '--arch', 'amd64']
     if args.docker:
         make_image_prog += ['--docker']
     elif not args.kvm:
